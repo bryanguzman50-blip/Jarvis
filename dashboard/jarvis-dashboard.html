@@ -306,9 +306,10 @@
         echo(t); handle(t);
       };
       rec.onerror = function(ev){
-        say(ev.error === "not-allowed"
-          ? "I need microphone permission for that, sir — check the address-bar icon."
-          : "I didn't catch that, sir.", {err:true, silent:true});
+        mic.dataset.live = ""; mic.textContent = "🎙 TALK";
+        say(ev.error === "not-allowed" || ev.error === "service-not-allowed"
+          ? "This browser won't hand the microphone to an embedded page, sir. Use the mic key on your keyboard instead — tap the command bar, dictate, then SEND. Add the word \"speak\" and I'll answer aloud."
+          : "I didn't catch that, sir — do try again.", {err:true, silent:true});
       };
       rec.onend = function(){ mic.dataset.live = ""; mic.textContent = "🎙 TALK"; };
       try { rec.start(); } catch(e){ mic.dataset.live=""; mic.textContent="🎙 TALK"; }
@@ -353,10 +354,31 @@
         {pre:"To: "+d.to+"\nSubject: "+d.subject+"\n\n"+d.body});
     }
   }
+  function extractEventTitle(text){
+    var q = /"([^"]+)"/.exec(text);
+    if (q && q[1].trim()) return q[1].trim();
+    var t = " " + text + " ";
+    var cutRe = /\b(today|tomorrow|next\s+\w+|mon(?:day)?|tue(?:s|sday)?|wed(?:nesday)?|thu(?:r|rs|rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?|on\s+\d{1,2}\/\d{1,2}|at\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\b/i;
+    var m = cutRe.exec(t);
+    if (m) t = t.slice(0, m.index);
+    var kept = t;
+    t = t
+      .replace(/\b(add|create|schedule|put|book|set\s*up|set)\b/ig, " ")
+      .replace(/\bevents?\b/ig, " ")
+      .replace(/\b(called|titled|named|please)\b/ig, " ")
+      .replace(/\b(?:to|on|in|for)?\s*(?:my\s+)?calendar\b/ig, " ")
+      .replace(/\b(an?|the|my|to|on|in|for)\b/ig, " ")
+      .replace(/[:,"]/g, " ")
+      .replace(/\s+/g, " ").trim();
+    if (!t) {
+      var w = /\b(walkthrough|meeting|appointment|call)\b/i.exec(kept);
+      if (w) return w[1];
+    }
+    return t || null;
+  }
   function startEventFlow(text){
     flow = {type:"event", step:null, data:{title:null, when:null}};
-    var m = /(?:event|meeting|appointment|walkthrough|call)\s+(?:called|titled|for|:)?\s*"?([^"]+?)"?\s*(?=(?:today|tomorrow|on|at|next|mon|tue|wed|thu|fri|sat|sun|$))/i.exec(text);
-    if (m && m[1].trim()) flow.data.title = m[1].trim();
+    flow.data.title = extractEventTitle(text);
     var w = parseWhen(text);
     if (w) flow.data.when = w;
     nextEventStep();
@@ -384,7 +406,7 @@
     else if (/\btomorrow\b/.test(t)) addDays = 1;
     else {
       for (var i2=0;i2<7;i2++){
-        var re = new RegExp("\\b(?:next\\s+)?"+dayNames[i2]+"(?:day|nesday|rsday|urday)?\\b");
+        var re = new RegExp("\\b(?:next\\s+)?"+dayNames[i2]+"(?:day|sday|nesday|rsday|urday)?\\b");
         if (re.test(t)) { addDays = (i2 - todayIdx + 7) % 7 || 7; break; }
       }
     }
@@ -475,8 +497,10 @@
     var t = text.toLowerCase().trim();
 
     if (/^(help|\?|what can you do)/.test(t)) { say("At your service, sir. On this console I can do the following:", {pre:HELP}); return; }
+    if (/\b(speak|aloud|out loud|read (it|me|this))\b/.test(t)) lastInputWasVoice = true;
     if (/(draft|compose|write).*(email|mail|reply)|^draft/.test(t)) { startEmailFlow(text); return; }
-    if (/(add|create|schedule|put|book).*(event|meeting|appointment|walkthrough|call\b)/.test(t)) { startEventFlow(text); return; }
+    if (/\b(add|create|schedule|put|book|set)\b[\s\S]*\b(calendar|event|meeting|appointment|walkthrough|call)\b/.test(t)
+        || /\bcalendar\b[\s\S]*\b(add|create|put)\b/.test(t)) { startEventFlow(text); return; }
     if (/news|headlines|weather|research|comps|find me|look up|search the web/.test(t)) {
       say("That needs my full brain, sir — web research doesn't run on this console. Open the Jarvis repo in Claude (app or claude.ai/code) and ask me there; I'll have it in moments."); return;
     }
