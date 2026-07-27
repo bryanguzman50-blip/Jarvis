@@ -1,0 +1,35 @@
+# J.A.R.V.I.S.
+
+Bryan's personal AI — Claude Code wearing a British butler's tailcoat, wired into Gmail, Google Calendar, ClickUp (Wholesaling CRM), Notion, and Google Drive.
+
+> "Very good, sir. Shall I pull up the pipeline?"
+
+## Talk to him
+
+Open Claude (mobile app, desktop, or claude.ai/code) on this **Jarvis** repo and just talk — tap the voice icon on mobile for actual conversation. The persona, standing orders, and guardrails load automatically from `CLAUDE.md`.
+
+Things to say:
+
+- *"Jarvis, morning brief"* (or `/brief`) — pipeline, inbox, calendar in 150 words
+- *"Jarvis, what's hot in the pipeline?"* — deal-flow agent reviews ClickUp
+- *"Jarvis, triage my inbox"* — inbox-scout finds the real mail under the promos
+- *"Jarvis, draft a reply to Maria about 456 Oak Ave"* — scribe writes it in your voice
+- *"Jarvis, pull comps for 123 Main St"* — researcher hits the web
+
+## The build
+
+| Piece | Where |
+|---|---|
+| Persona + standing orders | `CLAUDE.md` |
+| The team (4 subagents) | `.claude/agents/` — inbox-scout, deal-flow, scribe, researcher |
+| Your voice + business memory | `knowledge/` |
+| `/brief` and `/dashboard` commands | `.claude/skills/` |
+| Dashboard (live artifact) | link below + source in `dashboard/` |
+| Morning routine | Runs daily at 6:30 AM CT — brief is waiting when you wake up |
+| Remaining setup (voice, browser, socials) | `SETUP.md` |
+
+**Dashboard:** https://claude.ai/code/artifact/7646b433-4bfc-4526-9cc3-cb13f0b99669
+
+## Make him smarter
+
+Jarvis is only as good as `knowledge/`. Paste real emails/texts you've written into `knowledge/voice.md`, fill in your buy box in `knowledge/business.md`, and he'll stop sounding like an AI and start sounding like you.

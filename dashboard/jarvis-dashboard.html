@@ -1,0 +1,185 @@
+<title>J.A.R.V.I.S. — Command Deck</title>
+<style>
+  /* Committed single-theme: a JARVIS HUD is a dark instrument panel by design. */
+  :root{
+    --ground:#0a0f16; --panel:#101823; --panel-2:#0d141d; --line:#1c2a3a;
+    --cyan:#5fd4f4; --cyan-dim:#2a6b84; --gold:#d9a441;
+    --ink:#e8eef4; --ink-2:#8fa3b8; --ink-3:#55677c;
+    --good:#6fcf8e; --warn:#e0b356; --crit:#e07a66;
+    --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  html{color-scheme:dark}
+  body{background:var(--ground);color:var(--ink);font-family:var(--sans);
+    margin:0;padding:0;min-height:100vh;
+    background-image:radial-gradient(1100px 500px at 70% -10%,rgba(95,212,244,.07),transparent 60%);}
+  .deck{max-width:1060px;margin:0 auto;padding:28px 20px 48px;display:flex;flex-direction:column;gap:18px}
+
+  /* header */
+  header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:16px}
+  .reactor{width:44px;height:44px;border-radius:50%;flex:none;
+    background:radial-gradient(circle,#cdf2ff 0 18%,rgba(95,212,244,.85) 30%,rgba(95,212,244,.15) 55%,transparent 70%);
+    box-shadow:0 0 22px rgba(95,212,244,.45),inset 0 0 6px rgba(205,242,255,.9);
+    border:1px solid rgba(95,212,244,.5)}
+  @media (prefers-reduced-motion:no-preference){
+    .reactor{animation:pulse 4s ease-in-out infinite}
+    @keyframes pulse{50%{box-shadow:0 0 34px rgba(95,212,244,.65),inset 0 0 6px rgba(205,242,255,.9)}}
+  }
+  h1{font-size:1.35rem;margin:0;letter-spacing:.34em;font-weight:700}
+  h1 span{color:var(--cyan)}
+  .sub{font-family:var(--mono);font-size:.72rem;color:var(--ink-2);letter-spacing:.08em;margin-top:4px}
+  .stamp{margin-left:auto;text-align:right;font-family:var(--mono);font-size:.72rem;color:var(--ink-3);line-height:1.7}
+  .stamp b{color:var(--ink-2);font-weight:500}
+
+  /* stat tiles */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+  .tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+  .tile .k{font-family:var(--mono);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
+  .tile .v{font-size:1.9rem;font-weight:650;font-variant-numeric:tabular-nums;margin-top:6px;line-height:1}
+  .tile .d{font-size:.78rem;color:var(--ink-2);margin-top:7px}
+  .tile.hot .v{color:var(--gold)}
+  .tile.calm .v{color:var(--good);font-size:1.15rem;padding-top:.35rem}
+
+  /* panels */
+  .cols{display:grid;grid-template-columns:3fr 2fr;gap:14px}
+  @media (max-width:760px){.cols{grid-template-columns:1fr}}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 18px}
+  section h2{font-family:var(--mono);font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--cyan);margin:0 0 12px;font-weight:600}
+  .col{display:flex;flex-direction:column;gap:14px}
+
+  /* leads */
+  .lead{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+  .lead:first-of-type{border-top:none}
+  .lead .who{min-width:0;flex:1}
+  .lead .addr{font-weight:600;font-size:.92rem}
+  .lead .next{font-size:.78rem;color:var(--ink-2);margin-top:2px}
+  .pill{font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;white-space:nowrap;
+    padding:4px 9px;border-radius:999px;border:1px solid var(--line);color:var(--ink-2);flex:none}
+  .pill.new{border-color:rgba(95,212,244,.45);color:var(--cyan)}
+  .pill.hot{border-color:rgba(217,164,65,.55);color:var(--gold)}
+  .pill.nurture{color:var(--ink-3)}
+
+  /* inbox + systems */
+  .mail{padding:9px 0;border-top:1px solid var(--line)}
+  .mail:first-of-type{border-top:none}
+  .mail .from{font-family:var(--mono);font-size:.66rem;color:var(--ink-3);letter-spacing:.05em}
+  .mail .subj{font-size:.85rem;margin-top:2px}
+  .muted{color:var(--ink-3);font-size:.76rem;font-style:italic;margin-top:10px}
+  .sys{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:.82rem}
+  .sys:first-of-type{border-top:none}
+  .dot{font-family:var(--mono);font-size:.66rem;letter-spacing:.08em}
+  .dot.on{color:var(--good)} .dot.off{color:var(--ink-3)}
+  .dot.on::before{content:"● ";} .dot.off::before{content:"○ ";}
+
+  footer{font-family:var(--mono);font-size:.68rem;color:var(--ink-3);letter-spacing:.05em;
+    border-top:1px solid var(--line);padding-top:14px;line-height:1.8}
+  footer b{color:var(--ink-2);font-weight:500}
+</style>
+
+<div class="deck">
+  <header>
+    <div class="reactor" aria-hidden="true"></div>
+    <div>
+      <h1>J.<span>A</span>.R.V.I.S.</h1>
+      <div class="sub">Just A Rather Very Intelligent System — online</div>
+    </div>
+    <div class="stamp">
+      <b>SUN · JUL 27 2026</b><br>
+      snapshot 08:58 CT · America/Chicago
+    </div>
+  </header>
+
+  <div class="tiles">
+    <div class="tile">
+      <div class="k">Pipeline</div>
+      <div class="v">4</div>
+      <div class="d">active leads in Wholesaling CRM</div>
+    </div>
+    <div class="tile hot">
+      <div class="k">Needs action</div>
+      <div class="v">3</div>
+      <div class="d">1 hot follow-up · 2 new qualified</div>
+    </div>
+    <div class="tile">
+      <div class="k">Inbox unread</div>
+      <div class="v">201</div>
+      <div class="d">≈197 promos · 4 worth a look</div>
+    </div>
+    <div class="tile calm">
+      <div class="k">Calendar</div>
+      <div class="v">Clear, sir</div>
+      <div class="d">no events today or tomorrow</div>
+    </div>
+  </div>
+
+  <div class="cols">
+    <section>
+      <h2>Deal Pipeline — Active Leads</h2>
+      <div class="lead">
+        <div class="who">
+          <div class="addr">456 Oak Ave — Maria</div>
+          <div class="next">Next action: call Maria back while it's warm</div>
+        </div>
+        <span class="pill hot">📞 FOLLOW-UP (HOT)</span>
+      </div>
+      <div class="lead">
+        <div class="who">
+          <div class="addr">456 John St</div>
+          <div class="next">Next action: first contact + qualify condition &amp; timeline (assigned: Bryan)</div>
+        </div>
+        <span class="pill new">🔥 NEW QUALIFIED</span>
+      </div>
+      <div class="lead">
+        <div class="who">
+          <div class="addr">123 Main St — John</div>
+          <div class="next">Next action: first contact + qualify condition &amp; timeline</div>
+        </div>
+        <span class="pill new">🔥 NEW QUALIFIED</span>
+      </div>
+      <div class="lead">
+        <div class="who">
+          <div class="addr">789 Pine Rd — Alex</div>
+          <div class="next">Next action: scheduled touch-base; keep the relationship warm</div>
+        </div>
+        <span class="pill nurture">⏳ NURTURE (60+)</span>
+      </div>
+    </section>
+
+    <div class="col">
+      <section>
+        <h2>Inbox — Signal Only</h2>
+        <div class="mail">
+          <div class="from">INDEED · 07:57</div>
+          <div class="subj">Pre-Admission Testing RN — Sameday Surgery North Shore, $38–57/hr</div>
+        </div>
+        <div class="mail">
+          <div class="from">CAPITAL ONE · 22:31</div>
+          <div class="subj">Savings bucket created (×2 notices)</div>
+        </div>
+        <div class="mail">
+          <div class="from">LINKEDIN · 02:11</div>
+          <div class="subj">Connection suggestion: Chris Milliner, CEO — Levav Properties</div>
+        </div>
+        <div class="muted">~197 promotions suppressed. You're welcome, sir.</div>
+      </section>
+
+      <section>
+        <h2>Systems</h2>
+        <div class="sys"><span>Gmail</span><span class="dot on">ONLINE</span></div>
+        <div class="sys"><span>Google Calendar</span><span class="dot on">ONLINE</span></div>
+        <div class="sys"><span>ClickUp · Wholesaling CRM</span><span class="dot on">ONLINE</span></div>
+        <div class="sys"><span>Notion / Drive</span><span class="dot on">ONLINE</span></div>
+        <div class="sys"><span>Morning routine · 06:30 CT</span><span class="dot on">ARMED</span></div>
+        <div class="sys"><span>Voice (ElevenLabs)</span><span class="dot off">AWAITING KEY</span></div>
+        <div class="sys"><span>Browser (Claude for Chrome)</span><span class="dot off">NOT INSTALLED</span></div>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    <b>To refresh:</b> tell Jarvis "update my dashboard" (or run /dashboard) in the Jarvis repo — he re-pulls
+    Gmail, Calendar &amp; ClickUp and republishes this page at the same link.
+    Built by Jarvis · source in <b>dashboard/</b> of the Jarvis repo.
+  </footer>
+</div>
