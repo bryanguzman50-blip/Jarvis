@@ -16,7 +16,7 @@
   .deck{max-width:1060px;margin:0 auto;padding:28px 20px 48px;display:flex;flex-direction:column;gap:18px}
 
   header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:16px}
-  .reactor{width:44px;height:44px;border-radius:50%;flex:none;cursor:default;
+  .reactor{width:44px;height:44px;border-radius:50%;flex:none;
     background:radial-gradient(circle,#cdf2ff 0 18%,rgba(95,212,244,.85) 30%,rgba(95,212,244,.15) 55%,transparent 70%);
     box-shadow:0 0 22px rgba(95,212,244,.45),inset 0 0 6px rgba(205,242,255,.9);
     border:1px solid rgba(95,212,244,.5)}
@@ -30,12 +30,36 @@
   .stamp{margin-left:auto;text-align:right;font-family:var(--mono);font-size:.72rem;color:var(--ink-3);line-height:1.7}
   .stamp b{color:var(--ink-2);font-weight:500}
 
-  .speak{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;cursor:pointer;
-    background:transparent;color:var(--cyan);border:1px solid rgba(95,212,244,.45);
-    border-radius:6px;padding:9px 14px}
-  .speak:hover{background:rgba(95,212,244,.08)}
-  .speak:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
-  .speak[data-live="1"]{color:var(--gold);border-color:rgba(217,164,65,.55)}
+  /* console */
+  .console{background:var(--panel);border:1px solid rgba(95,212,244,.25);border-radius:8px;padding:14px 16px;
+    display:flex;flex-direction:column;gap:10px}
+  .console h2{font-family:var(--mono);font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--cyan);margin:0;font-weight:600}
+  .log{max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:2px 0}
+  .msg{font-size:.88rem;line-height:1.5;max-width:92%}
+  .msg .tag{font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;display:block;margin-bottom:2px}
+  .msg.user{align-self:flex-end;text-align:right;color:var(--ink-2)}
+  .msg.user .tag{color:var(--ink-3)}
+  .msg.jarvis{align-self:flex-start}
+  .msg.jarvis .tag{color:var(--cyan)}
+  .msg.jarvis.err{color:var(--warn)}
+  .msg pre{font-family:var(--mono);font-size:.78rem;color:var(--ink-2);white-space:pre-wrap;margin:4px 0 0;
+    border-left:2px solid var(--line);padding-left:10px}
+  .bar{display:flex;gap:8px}
+  .bar input{flex:1;min-width:0;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;
+    color:var(--ink);font-family:var(--mono);font-size:.85rem;padding:11px 12px}
+  .bar input::placeholder{color:var(--ink-3)}
+  .bar input:focus-visible{outline:2px solid var(--cyan);outline-offset:-1px}
+  .btn{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;cursor:pointer;flex:none;
+    background:transparent;color:var(--cyan);border:1px solid rgba(95,212,244,.45);border-radius:6px;padding:0 14px}
+  .btn:hover{background:rgba(95,212,244,.08)}
+  .btn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .btn[data-live="1"]{color:var(--gold);border-color:rgba(217,164,65,.55)}
+  .btn:disabled{color:var(--ink-3);border-color:var(--line);cursor:not-allowed}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;cursor:pointer;
+    background:var(--panel-2);color:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:5px 11px}
+  .chip:hover{color:var(--cyan);border-color:rgba(95,212,244,.4)}
 
   .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
   .tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
@@ -46,7 +70,7 @@
   .tile.calm .v{color:var(--good);font-size:1.15rem;padding-top:.35rem}
 
   .cols{display:grid;grid-template-columns:3fr 2fr;gap:14px}
-  @media (max-width:760px){.cols{grid-template-columns:1fr}}
+  @media (max-width:760px){.cols{grid-template-columns:1fr}.log{max-height:260px}}
   section{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 18px}
   section h2{font-family:var(--mono);font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;
     color:var(--cyan);margin:0 0 12px;font-weight:600;display:flex;justify-content:space-between;gap:8px}
@@ -96,8 +120,27 @@
       <b id="stamp-date">—</b><br>
       <span id="stamp-clock">—</span> · America/Chicago
     </div>
-    <button class="speak" id="speak" type="button">▶ SPEAK BRIEF</button>
   </header>
+
+  <div class="console">
+    <h2>Command Console</h2>
+    <div class="log" id="log" aria-live="polite"></div>
+    <div class="bar">
+      <input id="cmd" type="text" autocomplete="off" spellcheck="false"
+        placeholder='Try: "draft an email", "add event", "inbox", "pipeline", "brief"…' aria-label="Command input">
+      <button class="btn" id="mic" type="button" title="Speak a command">🎙 TALK</button>
+      <button class="btn" id="send" type="button">SEND</button>
+    </div>
+    <div class="chips" id="chips">
+      <button class="chip" data-c="brief">BRIEF</button>
+      <button class="chip" data-c="inbox">INBOX</button>
+      <button class="chip" data-c="pipeline">PIPELINE</button>
+      <button class="chip" data-c="this week">WEEK</button>
+      <button class="chip" data-c="draft an email">DRAFT EMAIL</button>
+      <button class="chip" data-c="add event">ADD EVENT</button>
+      <button class="chip" data-c="help">HELP</button>
+    </div>
+  </div>
 
   <div class="tiles">
     <div class="tile">
@@ -147,10 +190,10 @@
   </div>
 
   <footer>
-    <b>Live console:</b> this page pulls Gmail, Google Calendar &amp; ClickUp directly with your
-    credentials each time you open it — no Claude session, no usage spent. <b>▶ SPEAK BRIEF</b> reads
-    the summary aloud in your device's British voice. For deeper work, talk to Jarvis in the
-    Jarvis repo on Claude Code. Source lives in <b>dashboard/</b>.
+    <b>Live console:</b> commands run directly against your Gmail, Google Calendar &amp; ClickUp —
+    no Claude session, no usage spent. Email is <b>draft-only</b>: nothing sends without you.
+    Open-ended questions (news, research, writing) need Jarvis's full brain — the Jarvis repo in
+    Claude Code. Source lives in <b>dashboard/</b>.
   </footer>
 </div>
 
@@ -173,41 +216,369 @@
 
   /* ---------- helpers ---------- */
   function esc(s){ var d=document.createElement("div"); d.textContent=String(s==null?"":s); return d.innerHTML; }
+  function fmtT(iso){ return iso ? new Date(iso).toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"}) : ""; }
+  function fmtD(iso){ return iso ? new Date(iso).toLocaleDateString("en-US",{timeZone:TZ,weekday:"short",month:"short",day:"numeric"}) : ""; }
   function ageLabel(id, res){
     var el = $(id); if(!el) return;
     var t = res && res.cache && res.cache.storedAt ? res.cache.storedAt : Date.now();
-    el.textContent = "as of " + new Date(t).toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"});
+    el.textContent = "as of " + fmtT(new Date(t).toISOString());
   }
   var FIX = {
     needs_reauth: function(s){ return "Reconnect " + s + " in claude.ai Settings → Connectors, then reload."; },
     server_not_connected: function(s){ return "Add " + s + " in claude.ai Settings → Connectors, then reload."; },
     selection_required: function(s){ return "Choose which " + s + " connector to use when claude.ai asks, then reload."; },
     blocked_by_policy: function(s){ return s + " is blocked by organization policy."; },
-    approval_required: function(s){ return s + " requires per-call approval — open Jarvis in Claude Code instead."; },
+    approval_required: function(s){ return "Your organization requires approval for that " + s + " action, which pages can't request — ask me in a Claude session instead, sir."; },
     not_granted: function(){ return "This page wasn't granted connector access — reopen it from your claude.ai artifacts."; },
     capability_disabled: function(){ return "Live data isn't available in this view — reopen from claude.ai."; }
   };
   var AUTHZ = {needs_reauth:1, server_not_connected:1, blocked_by_policy:1, approval_required:1, not_granted:1};
-  function sectionError(boxId, server, err, hadData){
+  function errCopy(server, err){
     var code = err && err.code;
-    var fix = FIX[code] ? FIX[code](server) : (server + " is unreachable right now — data will refresh automatically.");
-    if (AUTHZ[code] || !hadData) {
-      $(boxId).innerHTML = '<div class="note err">' + esc(fix) + '</div>';
-      return true; // retracted
+    if (FIX[code]) return FIX[code](server);
+    if (code === "tool_error") return server + " reported a problem: " + (err.message || "unknown error.");
+    return server + " is unreachable right now — do try again shortly.";
+  }
+  function sectionError(boxId, server, err, hadData){
+    if (AUTHZ[err && err.code] || !hadData) {
+      $(boxId).innerHTML = '<div class="note err">' + esc(errCopy(server, err)) + '</div>';
+      return true;
     }
-    return false; // keep last-good
+    return false;
   }
 
-  /* ---------- no-runtime fallback ---------- */
-  if (!window.claude || window.claude.mcp === undefined) {
-    var msg = '<div class="note err">Live data needs the claude.ai viewer — open this page from your Artifacts list at claude.ai.</div>';
-    $("leads").innerHTML = msg; $("mail").innerHTML = msg; $("cal").innerHTML = msg;
-    $("systems").innerHTML = msg;
+  var hasMcp = !!(window.claude && window.claude.mcp !== undefined);
+  var mcp = hasMcp ? window.claude.mcp : null;
+
+  /* ================= CONSOLE ================= */
+  var log = $("log"), cmdIn = $("cmd");
+  var lastInputWasVoice = false;
+  function say(text, opts){
+    opts = opts || {};
+    var div = document.createElement("div");
+    div.className = "msg jarvis" + (opts.err ? " err" : "");
+    div.innerHTML = '<span class="tag">JARVIS</span>' + esc(text) + (opts.pre ? "<pre>"+esc(opts.pre)+"</pre>" : "");
+    log.appendChild(div); log.scrollTop = log.scrollHeight;
+    if (lastInputWasVoice && "speechSynthesis" in window && !opts.silent) speak(text);
+  }
+  function echo(text){
+    var div = document.createElement("div");
+    div.className = "msg user";
+    div.innerHTML = '<span class="tag">SIR</span>' + esc(text);
+    log.appendChild(div); log.scrollTop = log.scrollHeight;
+  }
+
+  /* voice out */
+  function pickVoice(){
+    var vs = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+    var prefer = ["Daniel","George","Arthur","Google UK English Male","Serena","Kate"];
+    for (var i=0;i<prefer.length;i++)
+      for (var j=0;j<vs.length;j++)
+        if (vs[j].name.indexOf(prefer[i])>=0 && /en[-_]?GB/i.test(vs[j].lang)) return vs[j];
+    for (var k=0;k<vs.length;k++) if (/en[-_]?GB/i.test(vs[k].lang)) return vs[k];
+    return null;
+  }
+  function speak(text){
+    try {
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var v = pickVoice(); if (v) u.voice = v;
+      u.rate = 0.97; u.pitch = 0.9;
+      window.speechSynthesis.speak(u);
+    } catch(e){}
+  }
+  if ("speechSynthesis" in window) window.speechSynthesis.getVoices();
+
+  /* voice in */
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var mic = $("mic");
+  if (!SR) { mic.disabled = true; mic.title = "Speech input not supported in this browser"; }
+  else {
+    var rec = null;
+    mic.addEventListener("click", function(){
+      if (mic.dataset.live === "1") { try{rec.stop();}catch(e){} return; }
+      rec = new SR();
+      rec.lang = "en-US"; rec.interimResults = false; rec.maxAlternatives = 1;
+      mic.dataset.live = "1"; mic.textContent = "■ STOP";
+      rec.onresult = function(ev){
+        var t = ev.results[0][0].transcript;
+        lastInputWasVoice = true;
+        echo(t); handle(t);
+      };
+      rec.onerror = function(ev){
+        say(ev.error === "not-allowed"
+          ? "I need microphone permission for that, sir — check the address-bar icon."
+          : "I didn't catch that, sir.", {err:true, silent:true});
+      };
+      rec.onend = function(){ mic.dataset.live = ""; mic.textContent = "🎙 TALK"; };
+      try { rec.start(); } catch(e){ mic.dataset.live=""; mic.textContent="🎙 TALK"; }
+    });
+  }
+
+  function submit(){
+    var t = cmdIn.value.trim();
+    if (!t) return;
+    cmdIn.value = "";
+    lastInputWasVoice = false;
+    echo(t); handle(t);
+  }
+  $("send").addEventListener("click", submit);
+  cmdIn.addEventListener("keydown", function(e){ if (e.key === "Enter") submit(); });
+  $("chips").addEventListener("click", function(e){
+    var c = e.target && e.target.getAttribute("data-c");
+    if (c) { lastInputWasVoice = false; echo(c); handle(c); }
+  });
+
+  /* ---------- wizards (multi-turn state) ---------- */
+  var flow = null; // {type:"email"|"event", step, data}
+
+  function startEmailFlow(text){
+    flow = {type:"email", step:null, data:{to:null, subject:null, body:null}};
+    var m = /to\s+([^\s@]+@[^\s]+)/i.exec(text);
+    if (m) flow.data.to = m[1].replace(/[.,;]$/,"");
+    m = /subject\s+"?([^":]+)"?(?::|$)/i.exec(text);
+    if (m) flow.data.subject = m[1].trim();
+    m = /(?:saying|body|:)\s+(.+)$/i.exec(text);
+    if (m && flow.data.subject !== m[1].trim()) flow.data.body = m[1].trim();
+    nextEmailStep();
+  }
+  function nextEmailStep(){
+    var d = flow.data;
+    if (!d.to) { flow.step="to"; say("Very good, sir. To which address?"); }
+    else if (!d.subject) { flow.step="subject"; say("Subject line?"); }
+    else if (!d.body) { flow.step="body"; say("And the message itself? Dictate away."); }
+    else {
+      flow.step="confirm";
+      say("Ready to file this as a draft in your Gmail — nothing sends without you. Shall I proceed? (yes/no)",
+        {pre:"To: "+d.to+"\nSubject: "+d.subject+"\n\n"+d.body});
+    }
+  }
+  function startEventFlow(text){
+    flow = {type:"event", step:null, data:{title:null, when:null}};
+    var m = /(?:event|meeting|appointment|walkthrough|call)\s+(?:called|titled|for|:)?\s*"?([^"]+?)"?\s*(?=(?:today|tomorrow|on|at|next|mon|tue|wed|thu|fri|sat|sun|$))/i.exec(text);
+    if (m && m[1].trim()) flow.data.title = m[1].trim();
+    var w = parseWhen(text);
+    if (w) flow.data.when = w;
+    nextEventStep();
+  }
+  function nextEventStep(){
+    var d = flow.data;
+    if (!d.title) { flow.step="title"; say("Certainly, sir. What shall I call the event?"); }
+    else if (!d.when) { flow.step="when"; say('When? Say something like "tomorrow at 3pm" or "Friday at 10am".'); }
+    else {
+      flow.step="confirm";
+      say("Add this to your calendar, sir? (yes/no)",
+        {pre:d.title+"\n"+d.when.human+" (30 min) · Central time"});
+    }
+  }
+  function parseWhen(text){
+    var t = text.toLowerCase();
+    var now = new Date();
+    var parts = new Intl.DateTimeFormat("en-US",{timeZone:TZ, year:"numeric", month:"2-digit", day:"2-digit", weekday:"short"}).formatToParts(now);
+    var g={}; parts.forEach(function(p){ g[p.type]=p.value; });
+    var base = new Date(Date.UTC(+g.year, +g.month-1, +g.day)); // chicago's calendar date
+    var dayNames=["sun","mon","tue","wed","thu","fri","sat"];
+    var todayIdx = dayNames.indexOf(g.weekday.toLowerCase().slice(0,3));
+    var addDays = null;
+    if (/\btoday\b/.test(t)) addDays = 0;
+    else if (/\btomorrow\b/.test(t)) addDays = 1;
+    else {
+      for (var i2=0;i2<7;i2++){
+        var re = new RegExp("\\b(?:next\\s+)?"+dayNames[i2]+"(?:day|nesday|rsday|urday)?\\b");
+        if (re.test(t)) { addDays = (i2 - todayIdx + 7) % 7 || 7; break; }
+      }
+    }
+    var dm = /\b(?:on\s+)?(\d{1,2})\/(\d{1,2})\b/.exec(t);
+    var tm = /\b(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/.exec(t);
+    if (addDays === null && !dm) return null;
+    if (!tm) return null;
+    var d2 = new Date(base.getTime());
+    if (dm) { d2.setUTCMonth(+dm[1]-1); d2.setUTCDate(+dm[2]); if (d2 < base) d2.setUTCFullYear(d2.getUTCFullYear()+1); }
+    else d2.setUTCDate(d2.getUTCDate() + addDays);
+    var hh = (+tm[1] % 12) + (tm[3] === "pm" ? 12 : 0);
+    var mm2 = tm[2] ? +tm[2] : 0;
+    function p2(n){ return (n<10?"0":"")+n; }
+    var ds = d2.getUTCFullYear()+"-"+p2(d2.getUTCMonth()+1)+"-"+p2(d2.getUTCDate());
+    var startLocal = ds+"T"+p2(hh)+":"+p2(mm2)+":00";
+    var endH = hh, endM = mm2+30; if (endM>=60){endM-=60;endH+=1;}
+    var endDs = ds; if (endH>=24){ endH-=24;
+      var d3=new Date(d2.getTime()+86400000);
+      endDs = d3.getUTCFullYear()+"-"+p2(d3.getUTCMonth()+1)+"-"+p2(d3.getUTCDate()); }
+    return { start:startLocal, end:endDs+"T"+p2(endH)+":"+p2(endM)+":00",
+      human: d2.toLocaleDateString("en-US",{timeZone:"UTC",weekday:"long",month:"short",day:"numeric"}) +
+        " at " + ((hh%12)||12) + (mm2?":"+p2(mm2):"") + (hh>=12?" PM":" AM") };
+  }
+
+  function handleFlowInput(text){
+    var t = text.trim();
+    if (/^(cancel|never ?mind|stop|forget it)$/i.test(t)) { flow=null; say("Consider it forgotten, sir."); return; }
+    if (flow.step === "confirm") {
+      if (/^(y|yes|yeah|proceed|do it|go ahead|confirm|aye)\b/i.test(t)) { executeFlow(); }
+      else if (/^(n|no|nope)\b/i.test(t)) { flow=null; say("Stood down, sir."); }
+      else say("A simple yes or no will do, sir.");
+      return;
+    }
+    if (flow.type === "email") {
+      if (flow.step === "to") {
+        var m = /([^\s@]+@[^\s]+)/.exec(t);
+        if (!m) { say("I need a proper email address, sir — user@domain.com."); return; }
+        flow.data.to = m[1].replace(/[.,;]$/,"");
+      }
+      else if (flow.step === "subject") flow.data.subject = t;
+      else if (flow.step === "body") flow.data.body = t;
+      nextEmailStep();
+    } else {
+      if (flow.step === "title") flow.data.title = t;
+      else if (flow.step === "when") {
+        var w = parseWhen(t);
+        if (!w) { say('I couldn\'t place that, sir — try "tomorrow at 3pm" or "7/30 at 10am".'); return; }
+        flow.data.when = w;
+      }
+      nextEventStep();
+    }
+  }
+
+  function executeFlow(){
+    var f = flow; flow = null;
+    if (!mcp) { say(FIX.capability_disabled(), {err:true}); return; }
+    if (f.type === "email") {
+      say("Filing the draft…", {silent:true});
+      mcp.callTool("Gmail", "create_draft",
+        {to:[f.data.to], subject:f.data.subject, body:f.data.body})
+        .then(function(){ say("Done — the draft is waiting in your Gmail, sir. Review and send at your leisure."); })
+        .catch(function(err){ say(errCopy("Gmail", err), {err:true}); });
+    } else {
+      say("Inking it in…", {silent:true});
+      mcp.callTool("Google Calendar", "create_event",
+        {summary:f.data.title, startTime:f.data.when.start, endTime:f.data.when.end, timeZone:TZ})
+        .then(function(){
+          say("On the calendar, sir: " + f.data.title + ", " + f.data.when.human + ".");
+          mcp.invalidate("Google Calendar", "list_events").catch(function(){});
+        })
+        .catch(function(err){ say(errCopy("Google Calendar", err), {err:true}); });
+    }
+  }
+
+  /* ---------- command router ---------- */
+  var HELP =
+    "brief — spoken/written rundown\n" +
+    "inbox [from someone] — what's actually worth reading\n" +
+    "pipeline — leads by stage\n" +
+    "today / this week — calendar\n" +
+    "draft an email [to a@b.com subject X: message] — files a Gmail draft\n" +
+    "add event [title] tomorrow at 3pm — calendar entry (asks first)\n" +
+    "cancel — abandon whatever we're doing\n" +
+    "Anything bigger (news, research, rewriting, deals math) → ask me in the Jarvis repo on Claude.";
+
+  function handle(text){
+    if (flow) { handleFlowInput(text); return; }
+    var t = text.toLowerCase().trim();
+
+    if (/^(help|\?|what can you do)/.test(t)) { say("At your service, sir. On this console I can do the following:", {pre:HELP}); return; }
+    if (/(draft|compose|write).*(email|mail|reply)|^draft/.test(t)) { startEmailFlow(text); return; }
+    if (/(add|create|schedule|put|book).*(event|meeting|appointment|walkthrough|call\b)/.test(t)) { startEventFlow(text); return; }
+    if (/news|headlines|weather|research|comps|find me|look up|search the web/.test(t)) {
+      say("That needs my full brain, sir — web research doesn't run on this console. Open the Jarvis repo in Claude (app or claude.ai/code) and ask me there; I'll have it in moments."); return;
+    }
+    if (/brief|rundown|status|morning/.test(t)) { say(briefText()); return; }
+    if (/inbox|unread|\bmail\b|emails?\b/.test(t)) { cmdInbox(t); return; }
+    if (/pipeline|leads?|deals?|clickup|crm/.test(t)) { cmdPipeline(); return; }
+    if (/week/.test(t)) { cmdWeek(); return; }
+    if (/today|calendar|schedule|agenda/.test(t)) { cmdToday(); return; }
+    if (/^(thanks|thank you|cheers|good).*/.test(t)) { say("Always a pleasure, sir."); return; }
+    say("Not one I handle here, sir. This console runs quick commands — type \"help\" to see them. For anything needing actual thought, I'm at my sharpest in the Jarvis repo on Claude.");
+  }
+
+  function cmdInbox(t){
+    if (!mcp) { say(FIX.capability_disabled(), {err:true}); return; }
+    var m = /from\s+([^\s]+)/.exec(t);
+    var q = m ? "from:" + m[1] + " in:inbox" : "is:unread in:inbox";
+    say("Checking…", {silent:true});
+    mcp.callTool("Gmail", "search_threads", {query:q, pageSize:10}, {cache:{staleTime:30000}})
+      .then(function(res){
+        var p = res.payload || {}, threads = p.threads || [];
+        if (!threads.length) { say(m ? "Nothing from them recently, sir." : "An empty inbox — remarkable, sir."); return; }
+        var lines = threads.slice(0,6).map(function(th){
+          var msg = (th.messages && th.messages[0]) || {};
+          return "• " + (msg.sender||"?") + " — " + (msg.subject||"(no subject)");
+        }).join("\n");
+        say(m ? "From " + m[1] + ":" : "The latest unread, sir:", {pre:lines});
+      })
+      .catch(function(err){ say(errCopy("Gmail", err), {err:true}); });
+  }
+  function cmdPipeline(){
+    if (!state.leads) { say("ClickUp hasn't answered yet, sir — one moment."); return; }
+    var lines = state.leads.tasks.map(function(x){
+      return "• " + x.name + " — " + (x.status||"?");
+    }).join("\n");
+    say("The pipeline, sir — " + state.leads.tasks.length + " active, " +
+      state.leads.hot + " hot, " + state.leads.fresh + " new qualified:", {pre:lines});
+  }
+  function cmdToday(){
+    if (!state.calOk) { say("The calendar hasn't answered yet, sir."); return; }
+    if (!state.cal || !state.cal.length) { say("Calendar's clear today, sir."); return; }
+    var lines = state.cal.map(function(e2){
+      var s = e2.startTime || e2.start || "";
+      if (s && typeof s === "object") s = s.dateTime || s.date || "";
+      return "• " + (fmtT(s)||"all day") + " — " + (e2.summary||e2.title||"(untitled)");
+    }).join("\n");
+    say("Today, sir:", {pre:lines});
+  }
+  function cmdWeek(){
+    if (!mcp) { say(FIX.capability_disabled(), {err:true}); return; }
+    var day = chicagoDayBounds();
+    var end = new Date(new Date(day.start).getTime() + 7*86400000).toISOString();
+    say("Checking the week…", {silent:true});
+    mcp.callTool("Google Calendar", "list_events", {startTime:day.start, endTime:end, pageSize:25}, {cache:{staleTime:30000}})
+      .then(function(res){
+        var p = res.payload || {};
+        var events = Array.isArray(p.events) ? p.events : (Array.isArray(p.items) ? p.items : []);
+        if (!events.length) { say("The week ahead is clear, sir. A rare luxury."); return; }
+        var lines = events.slice(0,12).map(function(e2){
+          var s = e2.startTime || e2.start || "";
+          if (s && typeof s === "object") s = s.dateTime || s.date || "";
+          return "• " + fmtD(s) + " " + fmtT(s) + " — " + (e2.summary||e2.title||"(untitled)");
+        }).join("\n");
+        say("The week ahead, sir:", {pre:lines});
+      })
+      .catch(function(err){ say(errCopy("Google Calendar", err), {err:true}); });
+  }
+
+  function briefText(){
+    var bits = ["Good day, sir. Jarvis reporting."];
+    if (state.leads) {
+      var L = state.leads;
+      bits.push("The pipeline holds " + L.tasks.length + " active lead" + (L.tasks.length===1?"":"s") +
+        (L.hot ? ", including " + L.hot + " hot follow-up" + (L.hot===1?"":"s") : "") +
+        (L.fresh ? " and " + L.fresh + " new qualified" : "") + ".");
+      if (L.tasks.length) bits.push("Top of the list: " + L.tasks[0].name + ".");
+    }
+    if (state.mail) {
+      bits.push("The inbox shows " + (isNaN(state.mail.total)?"a number of":state.mail.total) +
+        " unread; " + (state.mail.signal.length ? state.mail.signal.length + " look worth your attention." : "nothing that needs you."));
+    }
+    if (state.calOk) {
+      bits.push(state.cal && state.cal.length
+        ? "You have " + state.cal.length + " engagement" + (state.cal.length===1?"":"s") + " today."
+        : "Your calendar is clear.");
+    }
+    bits.push("Shall I proceed, sir?");
+    return bits.join(" ");
+  }
+
+  /* greeting */
+  say(hasMcp
+    ? "Console online, sir. Type or press TALK — \"help\" lists what I handle here."
+    : "Sir, live commands need the claude.ai viewer — open this page from your Artifacts list at claude.ai.", {silent:true});
+
+  /* ================= LIVE PANELS ================= */
+  if (!hasMcp) {
+    var msgNo = '<div class="note err">Live data needs the claude.ai viewer — open this page from your Artifacts list at claude.ai.</div>';
+    $("leads").innerHTML = msgNo; $("mail").innerHTML = msgNo; $("cal").innerHTML = msgNo; $("systems").innerHTML = msgNo;
     return;
   }
-  var mcp = window.claude.mcp;
 
-  /* ---------- systems panel ---------- */
+  /* systems */
   var MANIFEST = ["Gmail", "Google Calendar", "ClickUp"];
   var STATIC_ROWS = [
     ["Morning routine · 6:30 AM CT", "on", "ARMED"],
@@ -218,8 +589,7 @@
     var byName = {};
     (servers||[]).forEach(function(s){ byName[s.server] = s; });
     var html = MANIFEST.map(function(name){
-      var s = byName[name];
-      var cls, label;
+      var s = byName[name], cls, label;
       if (!s) { cls="off"; label="NOT CONNECTED"; }
       else if (s.authStatus === "connected") { cls="on"; label="ONLINE"; }
       else if (s.authStatus === "needs_reauth") { cls="warn"; label="RECONNECT"; }
@@ -231,10 +601,9 @@
     }).join("");
     $("systems").innerHTML = html;
   }
-  mcp.listTools().then(function(r){ renderSystems(r.servers); })
-    .catch(function(){ renderSystems([]); });
+  mcp.listTools().then(function(r){ renderSystems(r.servers); }).catch(function(){ renderSystems([]); });
 
-  /* ---------- pipeline (ClickUp) ---------- */
+  /* pipeline */
   function stageOf(status){
     var s = String(status||"").toLowerCase();
     if (s.indexOf("follow-up") >= 0 || s.indexOf("hot") >= 0) return "hot";
@@ -281,7 +650,7 @@
     },
     {cache:{staleTime:60000}, refetchInterval:300000});
 
-  /* ---------- inbox (Gmail) ---------- */
+  /* inbox */
   var PROMO = /(no-?reply|donotreply|newsletter|@e\.|@email\.|@emails\.|@digital\.|@cd\.|@b\.|marketing|@match\.|@shop\.|offers?@)/i;
   function renderMail(res){
     var p = res.payload || {};
@@ -294,7 +663,7 @@
       signal.push(m);
     });
     var html = signal.slice(0,6).map(function(m){
-      var when = m.date ? new Date(m.date).toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"}) : "";
+      var when = m.date ? fmtT(m.date) : "";
       return '<div class="mail"><div class="from">'+esc((m.sender||"").toUpperCase())+(when?" · "+esc(when):"")+'</div>'+
         '<div class="subj">'+esc(m.subject||"(no subject)")+'</div></div>';
     }).join("");
@@ -316,16 +685,15 @@
     },
     {cache:{staleTime:60000}, refetchInterval:300000});
 
-  /* ---------- calendar ---------- */
+  /* calendar */
   function chicagoDayBounds(){
-    // Resolve today's date and UTC offset as observed in Chicago right now.
     var now = new Date();
     var parts = new Intl.DateTimeFormat("en-US",
       {timeZone:TZ, year:"numeric", month:"2-digit", day:"2-digit",
        hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false}).formatToParts(now);
     var g = {}; parts.forEach(function(p){ g[p.type]=p.value; });
     var asUTC = Date.UTC(+g.year, +g.month-1, +g.day, +(g.hour%24), +g.minute, +g.second);
-    var offsetMin = Math.round((asUTC - now.getTime())/60000); // chicago = UTC + offsetMin
+    var offsetMin = Math.round((asUTC - now.getTime())/60000);
     var midnightUTC = Date.UTC(+g.year, +g.month-1, +g.day) - offsetMin*60000;
     return { start:new Date(midnightUTC).toISOString(),
              end:new Date(midnightUTC + 86400000).toISOString() };
@@ -341,8 +709,7 @@
       $("cal").innerHTML = events.slice(0,8).map(function(e2){
         var s = e2.startTime || e2.start || "";
         if (s && typeof s === "object") s = s.dateTime || s.date || "";
-        var when = s ? new Date(s).toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"}) : "";
-        return '<div class="mail"><div class="from">'+esc(when||"ALL DAY")+'</div>'+
+        return '<div class="mail"><div class="from">'+esc(fmtT(s)||"ALL DAY")+'</div>'+
           '<div class="subj">'+esc(e2.summary||e2.title||"(untitled)")+'</div></div>';
       }).join("");
       $("t-cal").textContent = events.length + (events.length===1?" event":" events");
@@ -350,9 +717,9 @@
     state.cal = events; state.calOk = true;
     ageLabel("age-cal", res);
   }
-  var day = chicagoDayBounds();
+  var day0 = chicagoDayBounds();
   mcp.watchTool("Google Calendar", "list_events",
-    {startTime:day.start, endTime:day.end, pageSize:10},
+    {startTime:day0.start, endTime:day0.end, pageSize:10},
     function(ev){
       if (ev.type === "data") renderCal(ev.result);
       else if (sectionError("cal", "Google Calendar", ev.error, state.calOk)) {
@@ -360,57 +727,5 @@
       }
     },
     {cache:{staleTime:60000}, refetchInterval:600000});
-
-  /* ---------- spoken brief ---------- */
-  function briefText(){
-    var bits = ["Good day, sir. Jarvis reporting."];
-    if (state.leads) {
-      var L = state.leads;
-      bits.push("The pipeline holds " + L.tasks.length + " active lead" + (L.tasks.length===1?"":"s") +
-        (L.hot ? ", including " + L.hot + " hot follow-up" + (L.hot===1?"":"s") : "") +
-        (L.fresh ? " and " + L.fresh + " new qualified" : "") + ".");
-      if (L.tasks.length) bits.push("Top of the list: " + L.tasks[0].name + ".");
-    }
-    if (state.mail) {
-      bits.push("The inbox shows " + (isNaN(state.mail.total)?"a number of":state.mail.total) +
-        " unread; " + (state.mail.signal.length ? state.mail.signal.length + " look worth your attention." :
-        "nothing that needs you."));
-    }
-    if (state.calOk) {
-      bits.push(state.cal && state.cal.length
-        ? "You have " + state.cal.length + " engagement" + (state.cal.length===1?"":"s") + " today."
-        : "Your calendar is clear.");
-    }
-    bits.push("Shall I proceed, sir?");
-    return bits.join(" ");
-  }
-  var btn = $("speak");
-  function pickVoice(){
-    var vs = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
-    var prefer = ["Daniel","George","Arthur","Google UK English Male","Serena","Kate"];
-    for (var i=0;i<prefer.length;i++){
-      for (var j=0;j<vs.length;j++){
-        if (vs[j].name.indexOf(prefer[i])>=0 && /en[-_]?GB/i.test(vs[j].lang)) return vs[j];
-      }
-    }
-    for (var k=0;k<vs.length;k++) if (/en[-_]?GB/i.test(vs[k].lang)) return vs[k];
-    return null;
-  }
-  if (!("speechSynthesis" in window)) { btn.disabled = true; btn.textContent = "VOICE N/A"; }
-  else {
-    window.speechSynthesis.getVoices(); // prime async voice list
-    btn.addEventListener("click", function(){
-      if (btn.dataset.live === "1") {
-        window.speechSynthesis.cancel();
-        btn.dataset.live = ""; btn.textContent = "▶ SPEAK BRIEF"; return;
-      }
-      var u = new SpeechSynthesisUtterance(briefText());
-      var v = pickVoice(); if (v) u.voice = v;
-      u.rate = 0.97; u.pitch = 0.9;
-      u.onend = u.onerror = function(){ btn.dataset.live=""; btn.textContent = "▶ SPEAK BRIEF"; };
-      btn.dataset.live = "1"; btn.textContent = "■ SILENCE";
-      window.speechSynthesis.speak(u);
-    });
-  }
 })();
 </script>
