@@ -542,9 +542,10 @@
     if (!state.calOk) { say("The calendar hasn't answered yet, sir."); return; }
     if (!state.cal || !state.cal.length) { say("Calendar's clear today, sir."); return; }
     var lines = state.cal.map(function(e2){
-      var s = e2.startTime || e2.start || "";
-      if (s && typeof s === "object") s = s.dateTime || s.date || "";
-      return "• " + (fmtT(s)||"all day") + " — " + (e2.summary||e2.title||"(untitled)");
+      var st = e2.startTime || e2.start || "";
+      var allDay = !!(st && typeof st === "object" && st.date && !st.dateTime);
+      var s = (st && typeof st === "object") ? (st.dateTime || st.date || "") : st;
+      return "• " + (allDay ? "all day" : (fmtT(s)||"all day")) + " — " + (e2.summary||e2.title||"(untitled)");
     }).join("\n");
     say("Today, sir:", {pre:lines});
   }
@@ -559,9 +560,10 @@
         var events = Array.isArray(p.events) ? p.events : (Array.isArray(p.items) ? p.items : []);
         if (!events.length) { say("The week ahead is clear, sir. A rare luxury."); return; }
         var lines = events.slice(0,12).map(function(e2){
-          var s = e2.startTime || e2.start || "";
-          if (s && typeof s === "object") s = s.dateTime || s.date || "";
-          return "• " + fmtD(s) + " " + fmtT(s) + " — " + (e2.summary||e2.title||"(untitled)");
+          var st = e2.startTime || e2.start || "";
+          var allDay = !!(st && typeof st === "object" && st.date && !st.dateTime);
+          var s = (st && typeof st === "object") ? (st.dateTime || st.date || "") : st;
+          return "• " + fmtD(s) + " " + (allDay ? "all day" : fmtT(s)) + " — " + (e2.summary||e2.title||"(untitled)");
         }).join("\n");
         say("The week ahead, sir:", {pre:lines});
       })
@@ -731,9 +733,10 @@
       $("t-cal").textContent = "Clear, sir";
     } else {
       $("cal").innerHTML = events.slice(0,8).map(function(e2){
-        var s = e2.startTime || e2.start || "";
-        if (s && typeof s === "object") s = s.dateTime || s.date || "";
-        return '<div class="mail"><div class="from">'+esc(fmtT(s)||"ALL DAY")+'</div>'+
+        var st = e2.startTime || e2.start || "";
+        var allDay = !!(st && typeof st === "object" && st.date && !st.dateTime);
+        var s = (st && typeof st === "object") ? (st.dateTime || st.date || "") : st;
+        return '<div class="mail"><div class="from">'+esc(allDay ? "ALL DAY" : (fmtT(s)||"ALL DAY"))+'</div>'+
           '<div class="subj">'+esc(e2.summary||e2.title||"(untitled)")+'</div></div>';
       }).join("");
       $("t-cal").textContent = events.length + (events.length===1?" event":" events");
