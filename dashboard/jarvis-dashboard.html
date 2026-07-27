@@ -95,6 +95,8 @@
   .mail .from{font-family:var(--mono);font-size:.66rem;color:var(--ink-3);letter-spacing:.05em;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .mail .subj{font-size:.85rem;margin-top:2px}
+  .mail .subj a{color:inherit;text-decoration:none}
+  .mail .subj a:hover{color:var(--cyan)}
   .muted{color:var(--ink-3);font-size:.76rem;font-style:italic;margin-top:10px}
   .note{color:var(--ink-2);font-size:.8rem;padding:6px 0}
   .note.err{color:var(--warn)}
@@ -127,7 +129,7 @@
     <div class="log" id="log" aria-live="polite"></div>
     <div class="bar">
       <input id="cmd" type="text" autocomplete="off" spellcheck="false"
-        placeholder='Try: "draft an email", "add event", "inbox", "pipeline", "brief"…' aria-label="Command input">
+        placeholder='Try: "draft an email", "add event", "move test run to friday 2pm", "note on a lead"…' aria-label="Command input">
       <button class="btn" id="mic" type="button" title="Speak a command">🎙 TALK</button>
       <button class="btn" id="send" type="button">SEND</button>
     </div>
@@ -138,6 +140,7 @@
       <button class="chip" data-c="this week">WEEK</button>
       <button class="chip" data-c="draft an email">DRAFT EMAIL</button>
       <button class="chip" data-c="add event">ADD EVENT</button>
+      <button class="chip" data-c="mao ">MAO CALC</button>
       <button class="chip" data-c="help">HELP</button>
     </div>
   </div>
@@ -327,7 +330,9 @@
   cmdIn.addEventListener("keydown", function(e){ if (e.key === "Enter") submit(); });
   $("chips").addEventListener("click", function(e){
     var c = e.target && e.target.getAttribute("data-c");
-    if (c) { lastInputWasVoice = false; echo(c); handle(c); }
+    if (!c) return;
+    if (/\s$/.test(c)) { cmdIn.value = c; cmdIn.focus(); return; } // prefill, awaiting details
+    lastInputWasVoice = false; echo(c); handle(c);
   });
 
   /* ---------- wizards (multi-turn state) ---------- */
@@ -431,6 +436,64 @@
         " at " + ((hh%12)||12) + (mm2?":"+p2(mm2):"") + (hh>=12?" PM":" AM") };
   }
 
+  /* --- event/lead lookup for delete, move, note --- */
+  function describeEvent(e2){
+    var st = e2.startTime || e2.start || "";
+    var allDay = !!(st && typeof st === "object" && st.date && !st.dateTime);
+    var s = (st && typeof st === "object") ? (st.dateTime || st.date || "") : st;
+    return (e2.summary || "(untitled)") + " — " + fmtD(s) + (allDay ? ", all day" : " at " + fmtT(s));
+  }
+  function findEvents(q, cb){
+    var day = chicagoDayBounds();
+    var start = new Date(new Date(day.start).getTime() - 86400000).toISOString();
+    var end = new Date(new Date(day.start).getTime() + 30*86400000).toISOString();
+    mcp.callTool("Google Calendar", "list_events", {startTime:start, endTime:end, pageSize:50}, {cache:{staleTime:15000}})
+      .then(function(res){
+        var p = res.payload || {};
+        var events = Array.isArray(p.events) ? p.events : (Array.isArray(p.items) ? p.items : []);
+        var ql = q.toLowerCase();
+        cb(null, events.filter(function(e2){ return String(e2.summary||"").toLowerCase().indexOf(ql) >= 0; }));
+      })
+      .catch(function(err){ cb(err); });
+  }
+  function getLeads(cb){
+    if (state.leads) { cb(null, state.leads.tasks); return; }
+    mcp.callTool("ClickUp", "clickup_filter_tasks", {space_ids:["90141845888"]}, {cache:{staleTime:30000}})
+      .then(function(res){ cb(null, (res.payload && res.payload.tasks) || []); })
+      .catch(function(err){ cb(err); });
+  }
+  function offerPick(matches, describe){
+    flow.step = "pick"; flow.data.matches = matches;
+    say("More than one candidate, sir — which number?",
+      {pre: matches.slice(0,5).map(function(x,i){ return (i+1)+". "+describe(x); }).join("\n")});
+  }
+  function resolveEventThen(next){
+    var f = flow;
+    findEvents(f.data.query, function(err, matches){
+      if (flow !== f) return;
+      if (err) { flow=null; say(errCopy("Google Calendar", err), {err:true}); return; }
+      if (!matches.length) { flow=null; say('Nothing called "'+f.data.query+'" on the calendar in the next 30 days, sir.'); return; }
+      if (matches.length > 1) { offerPick(matches, describeEvent); return; }
+      f.data.event = matches[0]; next();
+    });
+  }
+  function confirmDelete(){
+    flow.step = "confirm";
+    say("Strike this from the calendar, sir? (yes/no)", {pre: describeEvent(flow.data.event)});
+  }
+  function confirmMove(){
+    var d = flow.data;
+    if (!d.when) { flow.step = "when"; say('To when, sir? "friday at 2pm", "tomorrow at 10am"…'); return; }
+    flow.step = "confirm";
+    say("Reschedule this, sir? (yes/no)",
+      {pre: describeEvent(d.event) + "\n→ " + d.when.human + " · Central time"});
+  }
+  function confirmNote(){
+    flow.step = "confirm";
+    say("Log this on the lead, sir? (yes/no)",
+      {pre: flow.data.lead.name + "\n“" + flow.data.text + "”"});
+  }
+
   function handleFlowInput(text){
     var t = text.trim();
     if (/^(cancel|never ?mind|stop|forget it)$/i.test(t)) { flow=null; say("Consider it forgotten, sir."); return; }
@@ -438,6 +501,15 @@
       if (/^(y|yes|yeah|proceed|do it|go ahead|confirm|aye)\b/i.test(t)) { executeFlow(); }
       else if (/^(n|no|nope)\b/i.test(t)) { flow=null; say("Stood down, sir."); }
       else say("A simple yes or no will do, sir.");
+      return;
+    }
+    if (flow.step === "pick") {
+      var n = parseInt(t, 10);
+      var ms = flow.data.matches || [];
+      if (isNaN(n) || n < 1 || n > Math.min(ms.length, 5)) { say("A number from the list, sir."); return; }
+      if (flow.type === "delevent") { flow.data.event = ms[n-1]; confirmDelete(); }
+      else if (flow.type === "movevent") { flow.data.event = ms[n-1]; confirmMove(); }
+      else if (flow.type === "note") { flow.data.lead = ms[n-1]; confirmNote(); }
       return;
     }
     if (flow.type === "email") {
@@ -449,7 +521,7 @@
       else if (flow.step === "subject") flow.data.subject = t;
       else if (flow.step === "body") flow.data.body = t;
       nextEmailStep();
-    } else {
+    } else if (flow.type === "event") {
       if (flow.step === "title") flow.data.title = t;
       else if (flow.step === "when") {
         var w = parseWhen(t);
@@ -457,28 +529,134 @@
         flow.data.when = w;
       }
       nextEventStep();
+    } else if (flow.type === "delevent" && flow.step === "query") {
+      flow.data.query = t; resolveEventThen(confirmDelete);
+    } else if (flow.type === "movevent") {
+      if (flow.step === "query") { flow.data.query = t; resolveEventThen(confirmMove); }
+      else if (flow.step === "when") {
+        var w2 = parseWhen(t);
+        if (!w2) { say('I couldn\'t place that, sir — "friday at 2pm", "tomorrow at 10am"…'); return; }
+        flow.data.when = w2; confirmMove();
+      }
+    } else if (flow.type === "note") {
+      if (flow.step === "text") { flow.data.text = t; confirmNote(); }
+    } else if (flow.type === "newlead" && flow.step === "name") {
+      flow.data.name = t;
+      flow.step = "confirm";
+      say('Add to Active Leads as a new qualified lead, sir? (yes/no)', {pre: flow.data.name});
     }
   }
 
   function executeFlow(){
     var f = flow; flow = null;
     if (!mcp) { say(FIX.capability_disabled(), {err:true}); return; }
+    function calRefresh(){ mcp.invalidate("Google Calendar", "list_events").catch(function(){}); }
+    function crmRefresh(){ mcp.invalidate("ClickUp", "clickup_filter_tasks").catch(function(){}); }
     if (f.type === "email") {
       say("Filing the draft…", {silent:true});
       mcp.callTool("Gmail", "create_draft",
         {to:[f.data.to], subject:f.data.subject, body:f.data.body})
         .then(function(){ say("Done — the draft is waiting in your Gmail, sir. Review and send at your leisure."); })
         .catch(function(err){ say(errCopy("Gmail", err), {err:true}); });
-    } else {
+    } else if (f.type === "event") {
       say("Inking it in…", {silent:true});
       mcp.callTool("Google Calendar", "create_event",
         {summary:f.data.title, startTime:f.data.when.start, endTime:f.data.when.end, timeZone:TZ})
         .then(function(){
           say("On the calendar, sir: " + f.data.title + ", " + f.data.when.human + ".");
-          mcp.invalidate("Google Calendar", "list_events").catch(function(){});
+          calRefresh();
         })
         .catch(function(err){ say(errCopy("Google Calendar", err), {err:true}); });
+    } else if (f.type === "delevent") {
+      say("Striking it…", {silent:true});
+      mcp.callTool("Google Calendar", "delete_event",
+        {eventId:f.data.event.id, notificationLevel:"NONE"})
+        .then(function(){
+          say("Gone, sir — " + (f.data.event.summary || "the event") + " is off the calendar.");
+          calRefresh();
+        })
+        .catch(function(err){ say(errCopy("Google Calendar", err), {err:true}); });
+    } else if (f.type === "movevent") {
+      say("Rescheduling…", {silent:true});
+      mcp.callTool("Google Calendar", "update_event",
+        {eventId:f.data.event.id, startTime:f.data.when.start, timeZone:TZ, notificationLevel:"NONE"})
+        .then(function(){
+          say("Moved, sir: " + (f.data.event.summary || "the event") + " now sits at " + f.data.when.human + ".");
+          calRefresh();
+        })
+        .catch(function(err){ say(errCopy("Google Calendar", err), {err:true}); });
+    } else if (f.type === "note") {
+      say("Logging it…", {silent:true});
+      mcp.callTool("ClickUp", "clickup_create_comment",
+        {entity_type:"task", entity_id:f.data.lead.id, comment_text:f.data.text + "\n\n— logged via Jarvis console"})
+        .then(function(){ say("Noted on " + f.data.lead.name + ", sir."); })
+        .catch(function(err){ say(errCopy("ClickUp", err), {err:true}); });
+    } else if (f.type === "newlead") {
+      say("Adding the lead…", {silent:true});
+      mcp.callTool("ClickUp", "clickup_create_task",
+        {name:f.data.name, list_id:"901415109597"})
+        .then(function(){
+          say(f.data.name + " is in Active Leads, sir. Go get them.");
+          crmRefresh();
+        })
+        .catch(function(err){ say(errCopy("ClickUp", err), {err:true}); });
     }
+  }
+
+  /* --- flow starters for delete / move / note / new lead --- */
+  function stripEventWords(text){
+    return text
+      .replace(/\b(delete|remove|cancel|scratch|move|reschedule|bump|push\s*(back|up)?|the|an?|my|that|please)\b/ig, " ")
+      .replace(/\b(event|meeting|appointment)\b/ig, " ")
+      .replace(/\b(?:from|off|on|in|to)?\s*(?:my\s+)?calendar\b/ig, " ")
+      .replace(/\s+/g, " ").trim();
+  }
+  function startDeleteEventFlow(text){
+    flow = {type:"delevent", step:null, data:{}};
+    if (!mcp) { flow=null; say(FIX.capability_disabled(), {err:true}); return; }
+    var q = stripEventWords(text);
+    if (!q) { flow.step = "query"; say("Which event shall I strike, sir?"); return; }
+    flow.data.query = q; resolveEventThen(confirmDelete);
+  }
+  function startMoveEventFlow(text){
+    flow = {type:"movevent", step:null, data:{}};
+    if (!mcp) { flow=null; say(FIX.capability_disabled(), {err:true}); return; }
+    flow.data.when = parseWhen(text);
+    var t = " " + text + " ";
+    var cutRe = /\b(today|tomorrow|next\s+\w+|mon(?:day)?|tue(?:s|sday)?|wed(?:nesday)?|thu(?:r|rs|rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?|on\s+\d{1,2}\/\d{1,2}|at\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?|to\s*$)\b/i;
+    var m = cutRe.exec(t);
+    if (m) t = t.slice(0, m.index);
+    var q = stripEventWords(t).replace(/\bto\s*$/i,"").trim();
+    if (!q) { flow.step = "query"; say("Which event are we moving, sir?"); return; }
+    flow.data.query = q; resolveEventThen(confirmMove);
+  }
+  function startNoteFlow(text){
+    flow = {type:"note", step:null, data:{}};
+    if (!mcp) { flow=null; say(FIX.capability_disabled(), {err:true}); return; }
+    var m = /(?:note|log)\s*(?:a\s+)?(?:on|for)?\s*([^:]+?)\s*:\s*(.+)$/i.exec(text);
+    var leadQ = m ? m[1].trim() : null;
+    flow.data.text = m ? m[2].trim() : null;
+    if (!leadQ) { flow=null; say('Format it "note on [lead]: [what happened]", sir — e.g. "note on Oak Ave: seller called back".'); return; }
+    getLeads(function(err, tasks){
+      var f = flow; if (!f || f.type !== "note") return;
+      if (err) { flow=null; say(errCopy("ClickUp", err), {err:true}); return; }
+      var ql = leadQ.toLowerCase();
+      var matches = tasks.filter(function(x){ return String(x.name||"").toLowerCase().indexOf(ql) >= 0; });
+      if (!matches.length) { flow=null; say('No lead matching "'+leadQ+'" in the pipeline, sir.'); return; }
+      if (matches.length > 1) { offerPick(matches, function(x){ return x.name + " — " + (x.status||"?"); }); return; }
+      f.data.lead = matches[0];
+      if (!f.data.text) { f.step = "text"; say("What shall I log on " + matches[0].name + ", sir?"); return; }
+      confirmNote();
+    });
+  }
+  function startNewLeadFlow(text){
+    flow = {type:"newlead", step:null, data:{}};
+    if (!mcp) { flow=null; say(FIX.capability_disabled(), {err:true}); return; }
+    var name = text.replace(/\b(new lead|add (a )?lead|please)\b/ig, " ").replace(/[:]/g," ").replace(/\s+/g," ").trim();
+    if (!name) { flow.step = "name"; say('Name the lead, sir — the convention is "ADDRESS - Seller name".'); return; }
+    flow.data.name = name;
+    flow.step = "confirm";
+    say("Add to Active Leads as a new qualified lead, sir? (yes/no)", {pre: name});
   }
 
   /* ---------- command router ---------- */
@@ -488,9 +666,14 @@
     "pipeline — leads by stage\n" +
     "today / this week — calendar\n" +
     "draft an email [to a@b.com subject X: message] — files a Gmail draft\n" +
-    "add event [title] tomorrow at 3pm — calendar entry (asks first)\n" +
+    "add event [title] tomorrow at 3pm — calendar entry\n" +
+    "delete event [name] — remove a calendar event\n" +
+    "move [name] to friday at 2pm — reschedule an event\n" +
+    "note on [lead]: [what happened] — logs a comment in ClickUp\n" +
+    "new lead 123 Main St - Sarah — adds to Active Leads\n" +
+    "mao 200k arv 35k repairs [10k fee] — max allowable offer\n" +
     "cancel — abandon whatever we're doing\n" +
-    "Anything bigger (news, research, rewriting, deals math) → ask me in the Jarvis repo on Claude.";
+    "Every write asks before it acts. Anything bigger (news, research, rewriting) → ask me in the Jarvis repo on Claude.";
 
   function handle(text){
     if (flow) { handleFlowInput(text); return; }
@@ -498,6 +681,15 @@
 
     if (/^(help|\?|what can you do)/.test(t)) { say("At your service, sir. On this console I can do the following:", {pre:HELP}); return; }
     if (/\b(speak|aloud|out loud|read (it|me|this))\b/.test(t)) lastInputWasVoice = true;
+    if (/\b(mao|max allowable|deal math)\b|^offer\b/.test(t)) {
+      if (!/\d/.test(t)) { say('Give me the numbers, sir — e.g. "mao 200k arv 35k repairs".'); return; }
+      cmdMao(text); return;
+    }
+    if (/\b(delete|remove|cancel|scratch)\b[\s\S]*\b(event|meeting|appointment|walkthrough|call|calendar)\b/.test(t)
+        || /^(delete|remove|scratch)\s+\S/.test(t)) { startDeleteEventFlow(text); return; }
+    if (/\b(move|reschedule|bump|push (back|up)?)\b/.test(t)) { startMoveEventFlow(text); return; }
+    if (/\bnew lead\b|\badd (a )?lead\b/.test(t)) { startNewLeadFlow(text); return; }
+    if (/^(note|log)\b|\b(note|log)\s+(on|for)\b/.test(t)) { startNoteFlow(text); return; }
     if (/(draft|compose|write).*(email|mail|reply)|^draft/.test(t)) { startEmailFlow(text); return; }
     if (/\b(add|create|schedule|put|book|set)\b[\s\S]*\b(calendar|event|meeting|appointment|walkthrough|call)\b/.test(t)
         || /\bcalendar\b[\s\S]*\b(add|create|put)\b/.test(t)) { startEventFlow(text); return; }
@@ -511,6 +703,42 @@
     if (/today|calendar|schedule|agenda/.test(t)) { cmdToday(); return; }
     if (/^(thanks|thank you|cheers|good).*/.test(t)) { say("Always a pleasure, sir."); return; }
     say("Not one I handle here, sir. This console runs quick commands — type \"help\" to see them. For anything needing actual thought, I'm at my sharpest in the Jarvis repo on Claude.");
+  }
+
+  /* MAO = ARV*0.70 − repairs − assignment fee. Pure arithmetic, no connector. */
+  function money(n){ return "$" + Math.round(n).toLocaleString("en-US"); }
+  function parseMoney(tok){
+    var m = /(\d[\d,]*\.?\d*)\s*(k|m)?/i.exec(tok);
+    if (!m) return null;
+    var v = parseFloat(m[1].replace(/,/g,""));
+    if (m[2]) v *= (m[2].toLowerCase() === "k" ? 1000 : 1000000);
+    return v;
+  }
+  function cmdMao(text){
+    var t = text.toLowerCase();
+    var arv = null, rep = 0, fee = 10000, pct = 0.70;
+    var p = /(\d{2})\s*%/.exec(t); if (p) pct = parseInt(p[1],10)/100;
+    var lbl = /(\d[\d,]*\.?\d*\s*[km]?)\s*(?:in\s+)?(arv|repairs?|rehab|fee|assignment)/gi, m;
+    var seen = {};
+    while ((m = lbl.exec(t)) !== null) {
+      var v = parseMoney(m[1]), k = m[2].toLowerCase();
+      if (v === null) continue;
+      if (k === "arv") { arv = v; seen.arv = 1; }
+      else if (k === "fee" || k === "assignment") { fee = v; seen.fee = 1; }
+      else { rep = v; seen.rep = 1; }
+    }
+    if (arv === null) {
+      var nums = t.replace(/\d{2}\s*%/g," ").match(/\d[\d,]*\.?\d*\s*[km]?/gi) || [];
+      var vals = nums.map(parseMoney).filter(function(x){ return x !== null && x > 999; });
+      if (vals.length) { arv = vals[0]; if (!seen.rep && vals.length > 1) rep = vals[1]; if (!seen.fee && vals.length > 2) fee = vals[2]; }
+    }
+    if (arv === null) { say('Give me the numbers, sir — e.g. "mao 200k arv 35k repairs".'); return; }
+    var mao = arv*pct - rep - fee;
+    say("Maximum allowable offer: " + money(mao) + ", sir.",
+      {pre: "ARV          " + money(arv) + "\n× " + Math.round(pct*100) + "%        " + money(arv*pct) +
+            "\n− repairs    " + money(rep) + "\n− fee        " + money(fee) +
+            "\n─────────────────\nMAO          " + money(mao) +
+            (mao <= 0 ? "\n\nNo room in this one, sir." : "")});
   }
 
   function cmdInbox(t){
@@ -581,12 +809,20 @@
     }
     if (state.mail) {
       bits.push("The inbox shows " + (isNaN(state.mail.total)?"a number of":state.mail.total) +
-        " unread; " + (state.mail.signal.length ? state.mail.signal.length + " look worth your attention." : "nothing that needs you."));
+        " unread; " + (state.mail.signal.length
+          ? (state.mail.signal.length === 1 ? "one looks" : state.mail.signal.length + " look") + " worth your attention."
+          : "nothing that needs you."));
     }
     if (state.calOk) {
-      bits.push(state.cal && state.cal.length
-        ? "You have " + state.cal.length + " engagement" + (state.cal.length===1?"":"s") + " today."
-        : "Your calendar is clear.");
+      if (state.cal && state.cal.length) {
+        var e0 = state.cal[0];
+        var st0 = e0.startTime || e0.start || "";
+        var s0 = (st0 && typeof st0 === "object") ? (st0.dateTime || st0.date || "") : st0;
+        bits.push("You have " + state.cal.length + " engagement" + (state.cal.length===1?"":"s") +
+          " today — first, " + (e0.summary||"an event") + (s0 && st0.dateTime ? " at " + fmtT(s0) : "") + ".");
+      } else {
+        bits.push("Your calendar is clear.");
+      }
     }
     bits.push("Shall I proceed, sir?");
     return bits.join(" ");
@@ -686,12 +922,14 @@
     threads.forEach(function(th){
       var m = (th.messages && th.messages[0]) || {};
       if (PROMO.test(m.sender||"")) { promos++; return; }
-      signal.push(m);
+      signal.push({sender:m.sender, subject:m.subject, date:m.date, tid:th.id});
     });
     var html = signal.slice(0,6).map(function(m){
       var when = m.date ? fmtT(m.date) : "";
+      var subj = esc(m.subject||"(no subject)");
+      if (m.tid) subj = '<a href="https://mail.google.com/mail/u/0/#all/'+esc(m.tid)+'" target="_blank" rel="noopener">'+subj+'</a>';
       return '<div class="mail"><div class="from">'+esc((m.sender||"").toUpperCase())+(when?" · "+esc(when):"")+'</div>'+
-        '<div class="subj">'+esc(m.subject||"(no subject)")+'</div></div>';
+        '<div class="subj">'+subj+'</div></div>';
     }).join("");
     if (!html) html = '<div class="note">Nothing but promotions in recent mail, sir.</div>';
     html += '<div class="muted">Promotions filtered heuristically from the '+
