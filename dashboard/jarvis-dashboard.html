@@ -130,7 +130,6 @@
     <div class="bar">
       <input id="cmd" type="text" autocomplete="off" spellcheck="false"
         placeholder='Try: "draft an email", "add event", "move test run to friday 2pm", "note on a lead"…' aria-label="Command input">
-      <button class="btn" id="mic" type="button" title="Speak a command">🎙 TALK</button>
       <button class="btn" id="send" type="button">SEND</button>
       <button class="btn" id="mute" type="button" title="Mute or unmute spoken replies">🔊</button>
     </div>
@@ -196,7 +195,8 @@
   <footer>
     <b>Live console:</b> commands run directly against your Gmail, Google Calendar &amp; ClickUp —
     no Claude session, no usage spent. Email is <b>draft-only</b>: nothing sends without you.
-    Replies are spoken aloud — tap <b>🔊</b> to mute.
+    Replies are spoken aloud — tap <b>🔊</b> to mute. To talk instead of type, use your
+    keyboard's dictation key (iPhone: 🎙 on the keyboard · Mac: <b>fn fn</b> · Windows: <b>Win+H</b>).
     Open-ended questions (news, research, writing) need Jarvis's full brain — the Jarvis repo in
     Claude Code. Source lives in <b>dashboard/</b>.
   </footer>
@@ -330,31 +330,9 @@
     });
   }
 
-  /* voice in */
-  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  var mic = $("mic");
-  if (!SR) { mic.disabled = true; mic.title = "Speech input not supported in this browser"; }
-  else {
-    var rec = null;
-    mic.addEventListener("click", function(){
-      if (mic.dataset.live === "1") { try{rec.stop();}catch(e){} return; }
-      rec = new SR();
-      rec.lang = "en-US"; rec.interimResults = false; rec.maxAlternatives = 1;
-      mic.dataset.live = "1"; mic.textContent = "■ STOP";
-      rec.onresult = function(ev){
-        var t = ev.results[0][0].transcript;
-        echo(t); handle(t);
-      };
-      rec.onerror = function(ev){
-        mic.dataset.live = ""; mic.textContent = "🎙 TALK";
-        say(ev.error === "not-allowed" || ev.error === "service-not-allowed"
-          ? "This browser won't hand the microphone to an embedded page, sir. Use the mic key on your keyboard instead — tap the command bar, dictate, then SEND. Add the word \"speak\" and I'll answer aloud."
-          : "I didn't catch that, sir — do try again.", {err:true, silent:true});
-      };
-      rec.onend = function(){ mic.dataset.live = ""; mic.textContent = "🎙 TALK"; };
-      try { rec.start(); } catch(e){ mic.dataset.live=""; mic.textContent="🎙 TALK"; }
-    });
-  }
+  /* Voice input note: an artifact runs in a sandboxed frame that is not granted
+     microphone permission, so the Web Speech API can never start here — on any
+     browser. Dictation is done with the OS/keyboard mic into the command bar. */
 
   function submit(){
     var t = cmdIn.value.trim();
@@ -710,6 +688,7 @@
     "mao 200k arv 35k repairs [10k fee] — max allowable offer\n" +
     "cancel — abandon whatever we're doing\n" +
     "🔊 — mute or unmute my spoken replies\n" +
+    "To dictate: use your keyboard's mic key (iPhone 🎙 · Mac fn fn · Windows Win+H)\n" +
     "Every write asks before it acts. Anything bigger (news, research, rewriting) → ask me in the Jarvis repo on Claude.";
 
   function handle(text){
@@ -867,7 +846,7 @@
 
   /* greeting */
   say(hasMcp
-    ? "Console online, sir. Type or press TALK — \"help\" lists what I handle here."
+    ? "Console online, sir. Type a command, or dictate with your keyboard's mic key — \"help\" lists what I handle."
     : "Sir, live commands need the claude.ai viewer — open this page from your Artifacts list at claude.ai.", {silent:true});
 
   /* ================= LIVE PANELS ================= */

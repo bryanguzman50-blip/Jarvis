@@ -35,6 +35,15 @@ Things to say:
 
 **Dashboard:** https://claude.ai/code/artifact/7646b433-4bfc-4526-9cc3-cb13f0b99669
 
+## Which brain (and what it costs)
+
+This repo now **defaults to Sonnet** (`.claude/settings.json`), so every Jarvis conversation starts on the cheaper, faster model. That is the right default: Sonnet handles the brief, inbox triage, drafting, research, news, and pipeline work perfectly well.
+
+- **Switch for one session:** type `/model opus` (or `/model sonnet` to come back). Also available in the model picker in the Claude app.
+- **Change the default:** edit `"model"` in `.claude/settings.json` — `"sonnet"`, `"opus"`, or `"haiku"`.
+- **Reach for Opus when:** the job is genuinely hard — negotiating strategy, a messy multi-source research question, or changing Jarvis's own code. Ask Jarvis: he'll tell you when a task deserves the upgrade.
+- **The dashboard console costs nothing either way.** No model runs there at all.
+
 ## Make him smarter
 
 Jarvis is only as good as `knowledge/`. Paste real emails/texts you've written into `knowledge/voice.md`, fill in your buy box in `knowledge/business.md`, and he'll stop sounding like an AI and start sounding like you.

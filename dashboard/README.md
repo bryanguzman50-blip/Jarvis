@@ -28,7 +28,10 @@ Live tiles (pipeline count, needs-action, unread, today's calendar), the Active 
 Every write shows a preview and waits for `yes`. Ambiguous event/lead names offer a numbered pick list. Email is **draft-only** by design — nothing sends.
 
 ## Voice
-**Every reply is spoken aloud by default**, along with its detail block where that's the substance (lists, previews) — the MAO arithmetic table and the help listing are shown but not read. The 🔊 button mutes/unmutes and the choice persists in `localStorage`. Uses `speechSynthesis`, preferring an en-GB voice ("Daniel"). The 🎙 TALK button works on desktop Chrome; **iOS Safari blocks microphone access inside artifact frames**, so on iPhone use the keyboard's dictation key instead — the button explains this when it's refused.
+
+**Out:** every reply is spoken aloud by default, along with its detail block where that's the substance (lists, previews) — the MAO arithmetic table and the help listing are shown but not read. The 🔊 button mutes/unmutes and the choice persists in `localStorage`. Uses `speechSynthesis`, preferring an en-GB voice ("Daniel").
+
+**In:** there is deliberately no mic button. An artifact runs in a sandboxed frame that is never granted microphone permission, so `SpeechRecognition` cannot start — on any browser, desktop included. Dictation is done with the OS/keyboard mic into the command bar (iPhone 🎙 key · Mac `fn fn` · Windows `Win+H`). If artifact frames ever receive mic delegation, restore the button from git history — the handler was working code, only ever blocked by permissions policy. The 🎙 TALK button works on desktop Chrome; **iOS Safari blocks microphone access inside artifact frames**, so on iPhone use the keyboard's dictation key instead — the button explains this when it's refused.
 
 ## Republishing
 Only needed for design/logic changes. Use the Artifact tool on this same file path (from the original session) or pass `url` with the address above. **Omit `capabilities` when republishing** unless the set of connector tools the page calls has actually changed — omitting carries the stored grants forward.
