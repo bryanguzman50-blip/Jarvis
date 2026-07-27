@@ -15,9 +15,8 @@
     background-image:radial-gradient(1100px 500px at 70% -10%,rgba(95,212,244,.07),transparent 60%);}
   .deck{max-width:1060px;margin:0 auto;padding:28px 20px 48px;display:flex;flex-direction:column;gap:18px}
 
-  /* header */
   header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:16px}
-  .reactor{width:44px;height:44px;border-radius:50%;flex:none;
+  .reactor{width:44px;height:44px;border-radius:50%;flex:none;cursor:default;
     background:radial-gradient(circle,#cdf2ff 0 18%,rgba(95,212,244,.85) 30%,rgba(95,212,244,.15) 55%,transparent 70%);
     box-shadow:0 0 22px rgba(95,212,244,.45),inset 0 0 6px rgba(205,242,255,.9);
     border:1px solid rgba(95,212,244,.5)}
@@ -31,28 +30,35 @@
   .stamp{margin-left:auto;text-align:right;font-family:var(--mono);font-size:.72rem;color:var(--ink-3);line-height:1.7}
   .stamp b{color:var(--ink-2);font-weight:500}
 
-  /* stat tiles */
+  .speak{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;cursor:pointer;
+    background:transparent;color:var(--cyan);border:1px solid rgba(95,212,244,.45);
+    border-radius:6px;padding:9px 14px}
+  .speak:hover{background:rgba(95,212,244,.08)}
+  .speak:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .speak[data-live="1"]{color:var(--gold);border-color:rgba(217,164,65,.55)}
+
   .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
   .tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
   .tile .k{font-family:var(--mono);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
-  .tile .v{font-size:1.9rem;font-weight:650;font-variant-numeric:tabular-nums;margin-top:6px;line-height:1}
+  .tile .v{font-size:1.9rem;font-weight:650;font-variant-numeric:tabular-nums;margin-top:6px;line-height:1.15;min-height:2.2rem}
   .tile .d{font-size:.78rem;color:var(--ink-2);margin-top:7px}
   .tile.hot .v{color:var(--gold)}
   .tile.calm .v{color:var(--good);font-size:1.15rem;padding-top:.35rem}
 
-  /* panels */
   .cols{display:grid;grid-template-columns:3fr 2fr;gap:14px}
   @media (max-width:760px){.cols{grid-template-columns:1fr}}
   section{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 18px}
   section h2{font-family:var(--mono);font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;
-    color:var(--cyan);margin:0 0 12px;font-weight:600}
+    color:var(--cyan);margin:0 0 12px;font-weight:600;display:flex;justify-content:space-between;gap:8px}
+  section h2 .age{color:var(--ink-3);letter-spacing:.05em;font-weight:400;text-transform:none}
   .col{display:flex;flex-direction:column;gap:14px}
 
-  /* leads */
   .lead{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
-  .lead:first-of-type{border-top:none}
+  .lead:first-child{border-top:none}
   .lead .who{min-width:0;flex:1}
   .lead .addr{font-weight:600;font-size:.92rem}
+  .lead .addr a{color:inherit;text-decoration:none}
+  .lead .addr a:hover{color:var(--cyan)}
   .lead .next{font-size:.78rem;color:var(--ink-2);margin-top:2px}
   .pill{font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;white-space:nowrap;
     padding:4px 9px;border-radius:999px;border:1px solid var(--line);color:var(--ink-2);flex:none}
@@ -60,17 +66,19 @@
   .pill.hot{border-color:rgba(217,164,65,.55);color:var(--gold)}
   .pill.nurture{color:var(--ink-3)}
 
-  /* inbox + systems */
   .mail{padding:9px 0;border-top:1px solid var(--line)}
-  .mail:first-of-type{border-top:none}
-  .mail .from{font-family:var(--mono);font-size:.66rem;color:var(--ink-3);letter-spacing:.05em}
+  .mail:first-child{border-top:none}
+  .mail .from{font-family:var(--mono);font-size:.66rem;color:var(--ink-3);letter-spacing:.05em;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .mail .subj{font-size:.85rem;margin-top:2px}
   .muted{color:var(--ink-3);font-size:.76rem;font-style:italic;margin-top:10px}
-  .sys{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:.82rem}
-  .sys:first-of-type{border-top:none}
-  .dot{font-family:var(--mono);font-size:.66rem;letter-spacing:.08em}
-  .dot.on{color:var(--good)} .dot.off{color:var(--ink-3)}
-  .dot.on::before{content:"● ";} .dot.off::before{content:"○ ";}
+  .note{color:var(--ink-2);font-size:.8rem;padding:6px 0}
+  .note.err{color:var(--warn)}
+  .sys{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:.82rem}
+  .sys:first-child{border-top:none}
+  .dot{font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;text-align:right}
+  .dot.on{color:var(--good)} .dot.off{color:var(--ink-3)} .dot.warn{color:var(--warn)}
+  .dot.on::before{content:"● "} .dot.off::before{content:"○ "} .dot.warn::before{content:"◐ "}
 
   footer{font-family:var(--mono);font-size:.68rem;color:var(--ink-3);letter-spacing:.05em;
     border-top:1px solid var(--line);padding-top:14px;line-height:1.8}
@@ -85,101 +93,324 @@
       <div class="sub">Just A Rather Very Intelligent System — online</div>
     </div>
     <div class="stamp">
-      <b>SUN · JUL 27 2026</b><br>
-      snapshot 08:58 CT · America/Chicago
+      <b id="stamp-date">—</b><br>
+      <span id="stamp-clock">—</span> · America/Chicago
     </div>
+    <button class="speak" id="speak" type="button">▶ SPEAK BRIEF</button>
   </header>
 
   <div class="tiles">
     <div class="tile">
       <div class="k">Pipeline</div>
-      <div class="v">4</div>
-      <div class="d">active leads in Wholesaling CRM</div>
+      <div class="v" id="t-pipeline">—</div>
+      <div class="d" id="t-pipeline-d">active leads in Wholesaling CRM</div>
     </div>
     <div class="tile hot">
       <div class="k">Needs action</div>
-      <div class="v">3</div>
-      <div class="d">1 hot follow-up · 2 new qualified</div>
+      <div class="v" id="t-action">—</div>
+      <div class="d" id="t-action-d">hot follow-ups &amp; new qualified</div>
     </div>
     <div class="tile">
       <div class="k">Inbox unread</div>
-      <div class="v">201</div>
-      <div class="d">≈197 promos · 4 worth a look</div>
+      <div class="v" id="t-inbox">—</div>
+      <div class="d" id="t-inbox-d">promotions filtered out</div>
     </div>
     <div class="tile calm">
       <div class="k">Calendar</div>
-      <div class="v">Clear, sir</div>
-      <div class="d">no events today or tomorrow</div>
+      <div class="v" id="t-cal">—</div>
+      <div class="d" id="t-cal-d">today, Central time</div>
     </div>
   </div>
 
   <div class="cols">
     <section>
-      <h2>Deal Pipeline — Active Leads</h2>
-      <div class="lead">
-        <div class="who">
-          <div class="addr">456 Oak Ave — Maria</div>
-          <div class="next">Next action: call Maria back while it's warm</div>
-        </div>
-        <span class="pill hot">📞 FOLLOW-UP (HOT)</span>
-      </div>
-      <div class="lead">
-        <div class="who">
-          <div class="addr">456 John St</div>
-          <div class="next">Next action: first contact + qualify condition &amp; timeline (assigned: Bryan)</div>
-        </div>
-        <span class="pill new">🔥 NEW QUALIFIED</span>
-      </div>
-      <div class="lead">
-        <div class="who">
-          <div class="addr">123 Main St — John</div>
-          <div class="next">Next action: first contact + qualify condition &amp; timeline</div>
-        </div>
-        <span class="pill new">🔥 NEW QUALIFIED</span>
-      </div>
-      <div class="lead">
-        <div class="who">
-          <div class="addr">789 Pine Rd — Alex</div>
-          <div class="next">Next action: scheduled touch-base; keep the relationship warm</div>
-        </div>
-        <span class="pill nurture">⏳ NURTURE (60+)</span>
-      </div>
+      <h2><span>Deal Pipeline — Active Leads</span><span class="age" id="age-leads"></span></h2>
+      <div id="leads"><div class="note">Contacting ClickUp…</div></div>
     </section>
 
     <div class="col">
       <section>
-        <h2>Inbox — Signal Only</h2>
-        <div class="mail">
-          <div class="from">INDEED · 07:57</div>
-          <div class="subj">Pre-Admission Testing RN — Sameday Surgery North Shore, $38–57/hr</div>
-        </div>
-        <div class="mail">
-          <div class="from">CAPITAL ONE · 22:31</div>
-          <div class="subj">Savings bucket created (×2 notices)</div>
-        </div>
-        <div class="mail">
-          <div class="from">LINKEDIN · 02:11</div>
-          <div class="subj">Connection suggestion: Chris Milliner, CEO — Levav Properties</div>
-        </div>
-        <div class="muted">~197 promotions suppressed. You're welcome, sir.</div>
+        <h2><span>Inbox — Signal Only</span><span class="age" id="age-mail"></span></h2>
+        <div id="mail"><div class="note">Contacting Gmail…</div></div>
+      </section>
+
+      <section>
+        <h2><span>Today</span><span class="age" id="age-cal"></span></h2>
+        <div id="cal"><div class="note">Contacting Google Calendar…</div></div>
       </section>
 
       <section>
         <h2>Systems</h2>
-        <div class="sys"><span>Gmail</span><span class="dot on">ONLINE</span></div>
-        <div class="sys"><span>Google Calendar</span><span class="dot on">ONLINE</span></div>
-        <div class="sys"><span>ClickUp · Wholesaling CRM</span><span class="dot on">ONLINE</span></div>
-        <div class="sys"><span>Notion / Drive</span><span class="dot on">ONLINE</span></div>
-        <div class="sys"><span>Morning routine · 06:30 CT</span><span class="dot on">ARMED</span></div>
-        <div class="sys"><span>Voice (ElevenLabs)</span><span class="dot off">AWAITING KEY</span></div>
-        <div class="sys"><span>Browser (Claude for Chrome)</span><span class="dot off">NOT INSTALLED</span></div>
+        <div id="systems"><div class="note">Checking connectors…</div></div>
       </section>
     </div>
   </div>
 
   <footer>
-    <b>To refresh:</b> tell Jarvis "update my dashboard" (or run /dashboard) in the Jarvis repo — he re-pulls
-    Gmail, Calendar &amp; ClickUp and republishes this page at the same link.
-    Built by Jarvis · source in <b>dashboard/</b> of the Jarvis repo.
+    <b>Live console:</b> this page pulls Gmail, Google Calendar &amp; ClickUp directly with your
+    credentials each time you open it — no Claude session, no usage spent. <b>▶ SPEAK BRIEF</b> reads
+    the summary aloud in your device's British voice. For deeper work, talk to Jarvis in the
+    Jarvis repo on Claude Code. Source lives in <b>dashboard/</b>.
   </footer>
 </div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var TZ = "America/Chicago";
+  var state = { leads:null, mail:null, cal:null, calOk:false };
+
+  /* ---------- header clock ---------- */
+  function tick(){
+    var now = new Date();
+    $("stamp-date").textContent = now.toLocaleDateString("en-US",
+      {timeZone:TZ, weekday:"short", month:"short", day:"numeric", year:"numeric"}).toUpperCase();
+    $("stamp-clock").textContent = now.toLocaleTimeString("en-US",
+      {timeZone:TZ, hour:"numeric", minute:"2-digit"});
+  }
+  tick(); setInterval(tick, 30000);
+
+  /* ---------- helpers ---------- */
+  function esc(s){ var d=document.createElement("div"); d.textContent=String(s==null?"":s); return d.innerHTML; }
+  function ageLabel(id, res){
+    var el = $(id); if(!el) return;
+    var t = res && res.cache && res.cache.storedAt ? res.cache.storedAt : Date.now();
+    el.textContent = "as of " + new Date(t).toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"});
+  }
+  var FIX = {
+    needs_reauth: function(s){ return "Reconnect " + s + " in claude.ai Settings → Connectors, then reload."; },
+    server_not_connected: function(s){ return "Add " + s + " in claude.ai Settings → Connectors, then reload."; },
+    selection_required: function(s){ return "Choose which " + s + " connector to use when claude.ai asks, then reload."; },
+    blocked_by_policy: function(s){ return s + " is blocked by organization policy."; },
+    approval_required: function(s){ return s + " requires per-call approval — open Jarvis in Claude Code instead."; },
+    not_granted: function(){ return "This page wasn't granted connector access — reopen it from your claude.ai artifacts."; },
+    capability_disabled: function(){ return "Live data isn't available in this view — reopen from claude.ai."; }
+  };
+  var AUTHZ = {needs_reauth:1, server_not_connected:1, blocked_by_policy:1, approval_required:1, not_granted:1};
+  function sectionError(boxId, server, err, hadData){
+    var code = err && err.code;
+    var fix = FIX[code] ? FIX[code](server) : (server + " is unreachable right now — data will refresh automatically.");
+    if (AUTHZ[code] || !hadData) {
+      $(boxId).innerHTML = '<div class="note err">' + esc(fix) + '</div>';
+      return true; // retracted
+    }
+    return false; // keep last-good
+  }
+
+  /* ---------- no-runtime fallback ---------- */
+  if (!window.claude || window.claude.mcp === undefined) {
+    var msg = '<div class="note err">Live data needs the claude.ai viewer — open this page from your Artifacts list at claude.ai.</div>';
+    $("leads").innerHTML = msg; $("mail").innerHTML = msg; $("cal").innerHTML = msg;
+    $("systems").innerHTML = msg;
+    return;
+  }
+  var mcp = window.claude.mcp;
+
+  /* ---------- systems panel ---------- */
+  var MANIFEST = ["Gmail", "Google Calendar", "ClickUp"];
+  var STATIC_ROWS = [
+    ["Morning routine · 6:30 AM CT", "on", "ARMED"],
+    ["Browser voice (built-in, no key)", "on", "READY"],
+    ["ElevenLabs voice", "off", "SEE SETUP.MD"]
+  ];
+  function renderSystems(servers){
+    var byName = {};
+    (servers||[]).forEach(function(s){ byName[s.server] = s; });
+    var html = MANIFEST.map(function(name){
+      var s = byName[name];
+      var cls, label;
+      if (!s) { cls="off"; label="NOT CONNECTED"; }
+      else if (s.authStatus === "connected") { cls="on"; label="ONLINE"; }
+      else if (s.authStatus === "needs_reauth") { cls="warn"; label="RECONNECT"; }
+      else { cls="off"; label="CHECKING"; }
+      return '<div class="sys"><span>'+esc(name)+'</span><span class="dot '+cls+'">'+label+'</span></div>';
+    }).join("");
+    html += STATIC_ROWS.map(function(r){
+      return '<div class="sys"><span>'+esc(r[0])+'</span><span class="dot '+r[1]+'">'+esc(r[2])+'</span></div>';
+    }).join("");
+    $("systems").innerHTML = html;
+  }
+  mcp.listTools().then(function(r){ renderSystems(r.servers); })
+    .catch(function(){ renderSystems([]); });
+
+  /* ---------- pipeline (ClickUp) ---------- */
+  function stageOf(status){
+    var s = String(status||"").toLowerCase();
+    if (s.indexOf("follow-up") >= 0 || s.indexOf("hot") >= 0) return "hot";
+    if (s.indexOf("new") >= 0 || s.indexOf("qualified") >= 0) return "new";
+    if (s.indexOf("nurture") >= 0) return "nurture";
+    return "other";
+  }
+  var NEXT = {
+    hot: "Next action: call back while it's warm",
+    "new": "Next action: first contact — qualify condition & timeline",
+    nurture: "Next action: scheduled touch-base; keep it warm",
+    other: "Next action: review in ClickUp"
+  };
+  var STAGE_RANK = {hot:0, "new":1, other:2, nurture:3};
+  function renderLeads(res){
+    var p = res.payload || {};
+    var tasks = Array.isArray(p.tasks) ? p.tasks.slice() : [];
+    tasks.sort(function(a,b){ return STAGE_RANK[stageOf(a.status)] - STAGE_RANK[stageOf(b.status)]; });
+    var hot=0, fresh=0;
+    var html = tasks.map(function(t){
+      var st = stageOf(t.status);
+      if (st==="hot") hot++; if (st==="new") fresh++;
+      var name = t.url
+        ? '<a href="'+esc(t.url)+'" target="_blank" rel="noopener">'+esc(t.name)+'</a>'
+        : esc(t.name);
+      return '<div class="lead"><div class="who"><div class="addr">'+name+'</div>'+
+        '<div class="next">'+esc(NEXT[st])+'</div></div>'+
+        '<span class="pill '+st+'">'+esc(String(t.status||"").toUpperCase())+'</span></div>';
+    }).join("");
+    $("leads").innerHTML = html || '<div class="note">Pipeline is empty, sir. Time to pull some leads.</div>';
+    $("t-pipeline").textContent = tasks.length;
+    $("t-action").textContent = hot + fresh;
+    $("t-action-d").textContent = hot + " hot follow-up · " + fresh + " new qualified";
+    state.leads = {tasks:tasks, hot:hot, fresh:fresh};
+    ageLabel("age-leads", res);
+  }
+  mcp.watchTool("ClickUp", "clickup_filter_tasks",
+    {space_ids:["90141845888"], order_by:"updated", reverse:true},
+    function(ev){
+      if (ev.type === "data") renderLeads(ev.result);
+      else if (sectionError("leads", "ClickUp", ev.error, !!state.leads)) {
+        state.leads = null; $("t-pipeline").textContent = "—"; $("t-action").textContent = "—";
+      }
+    },
+    {cache:{staleTime:60000}, refetchInterval:300000});
+
+  /* ---------- inbox (Gmail) ---------- */
+  var PROMO = /(no-?reply|donotreply|newsletter|@e\.|@email\.|@emails\.|@digital\.|@cd\.|@b\.|marketing|@match\.|@shop\.|offers?@)/i;
+  function renderMail(res){
+    var p = res.payload || {};
+    var threads = Array.isArray(p.threads) ? p.threads : [];
+    var total = parseInt(p.resultCountEstimate, 10);
+    var signal = [], promos = 0;
+    threads.forEach(function(th){
+      var m = (th.messages && th.messages[0]) || {};
+      if (PROMO.test(m.sender||"")) { promos++; return; }
+      signal.push(m);
+    });
+    var html = signal.slice(0,6).map(function(m){
+      var when = m.date ? new Date(m.date).toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"}) : "";
+      return '<div class="mail"><div class="from">'+esc((m.sender||"").toUpperCase())+(when?" · "+esc(when):"")+'</div>'+
+        '<div class="subj">'+esc(m.subject||"(no subject)")+'</div></div>';
+    }).join("");
+    if (!html) html = '<div class="note">Nothing but promotions in recent mail, sir.</div>';
+    html += '<div class="muted">Promotions filtered heuristically from the '+
+      (isNaN(total) ? "latest" : total) + ' unread. You\'re welcome, sir.</div>';
+    $("mail").innerHTML = html;
+    $("t-inbox").textContent = isNaN(total) ? "—" : total;
+    state.mail = {total:total, signal:signal};
+    ageLabel("age-mail", res);
+  }
+  mcp.watchTool("Gmail", "search_threads",
+    {query:"is:unread in:inbox", pageSize:15},
+    function(ev){
+      if (ev.type === "data") renderMail(ev.result);
+      else if (sectionError("mail", "Gmail", ev.error, !!state.mail)) {
+        state.mail = null; $("t-inbox").textContent = "—";
+      }
+    },
+    {cache:{staleTime:60000}, refetchInterval:300000});
+
+  /* ---------- calendar ---------- */
+  function chicagoDayBounds(){
+    // Resolve today's date and UTC offset as observed in Chicago right now.
+    var now = new Date();
+    var parts = new Intl.DateTimeFormat("en-US",
+      {timeZone:TZ, year:"numeric", month:"2-digit", day:"2-digit",
+       hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false}).formatToParts(now);
+    var g = {}; parts.forEach(function(p){ g[p.type]=p.value; });
+    var asUTC = Date.UTC(+g.year, +g.month-1, +g.day, +(g.hour%24), +g.minute, +g.second);
+    var offsetMin = Math.round((asUTC - now.getTime())/60000); // chicago = UTC + offsetMin
+    var midnightUTC = Date.UTC(+g.year, +g.month-1, +g.day) - offsetMin*60000;
+    return { start:new Date(midnightUTC).toISOString(),
+             end:new Date(midnightUTC + 86400000).toISOString() };
+  }
+  function renderCal(res){
+    var p = res.payload || {};
+    // Non-empty response shape unverified at build time; accept common containers.
+    var events = Array.isArray(p.events) ? p.events : (Array.isArray(p.items) ? p.items : []);
+    if (!events.length) {
+      $("cal").innerHTML = '<div class="note">Calendar\'s clear, sir.</div>';
+      $("t-cal").textContent = "Clear, sir";
+    } else {
+      $("cal").innerHTML = events.slice(0,8).map(function(e2){
+        var s = e2.startTime || e2.start || "";
+        if (s && typeof s === "object") s = s.dateTime || s.date || "";
+        var when = s ? new Date(s).toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"}) : "";
+        return '<div class="mail"><div class="from">'+esc(when||"ALL DAY")+'</div>'+
+          '<div class="subj">'+esc(e2.summary||e2.title||"(untitled)")+'</div></div>';
+      }).join("");
+      $("t-cal").textContent = events.length + (events.length===1?" event":" events");
+    }
+    state.cal = events; state.calOk = true;
+    ageLabel("age-cal", res);
+  }
+  var day = chicagoDayBounds();
+  mcp.watchTool("Google Calendar", "list_events",
+    {startTime:day.start, endTime:day.end, pageSize:10},
+    function(ev){
+      if (ev.type === "data") renderCal(ev.result);
+      else if (sectionError("cal", "Google Calendar", ev.error, state.calOk)) {
+        state.calOk = false; $("t-cal").textContent = "—";
+      }
+    },
+    {cache:{staleTime:60000}, refetchInterval:600000});
+
+  /* ---------- spoken brief ---------- */
+  function briefText(){
+    var bits = ["Good day, sir. Jarvis reporting."];
+    if (state.leads) {
+      var L = state.leads;
+      bits.push("The pipeline holds " + L.tasks.length + " active lead" + (L.tasks.length===1?"":"s") +
+        (L.hot ? ", including " + L.hot + " hot follow-up" + (L.hot===1?"":"s") : "") +
+        (L.fresh ? " and " + L.fresh + " new qualified" : "") + ".");
+      if (L.tasks.length) bits.push("Top of the list: " + L.tasks[0].name + ".");
+    }
+    if (state.mail) {
+      bits.push("The inbox shows " + (isNaN(state.mail.total)?"a number of":state.mail.total) +
+        " unread; " + (state.mail.signal.length ? state.mail.signal.length + " look worth your attention." :
+        "nothing that needs you."));
+    }
+    if (state.calOk) {
+      bits.push(state.cal && state.cal.length
+        ? "You have " + state.cal.length + " engagement" + (state.cal.length===1?"":"s") + " today."
+        : "Your calendar is clear.");
+    }
+    bits.push("Shall I proceed, sir?");
+    return bits.join(" ");
+  }
+  var btn = $("speak");
+  function pickVoice(){
+    var vs = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+    var prefer = ["Daniel","George","Arthur","Google UK English Male","Serena","Kate"];
+    for (var i=0;i<prefer.length;i++){
+      for (var j=0;j<vs.length;j++){
+        if (vs[j].name.indexOf(prefer[i])>=0 && /en[-_]?GB/i.test(vs[j].lang)) return vs[j];
+      }
+    }
+    for (var k=0;k<vs.length;k++) if (/en[-_]?GB/i.test(vs[k].lang)) return vs[k];
+    return null;
+  }
+  if (!("speechSynthesis" in window)) { btn.disabled = true; btn.textContent = "VOICE N/A"; }
+  else {
+    window.speechSynthesis.getVoices(); // prime async voice list
+    btn.addEventListener("click", function(){
+      if (btn.dataset.live === "1") {
+        window.speechSynthesis.cancel();
+        btn.dataset.live = ""; btn.textContent = "▶ SPEAK BRIEF"; return;
+      }
+      var u = new SpeechSynthesisUtterance(briefText());
+      var v = pickVoice(); if (v) u.voice = v;
+      u.rate = 0.97; u.pitch = 0.9;
+      u.onend = u.onerror = function(){ btn.dataset.live=""; btn.textContent = "▶ SPEAK BRIEF"; };
+      btn.dataset.live = "1"; btn.textContent = "■ SILENCE";
+      window.speechSynthesis.speak(u);
+    });
+  }
+})();
+</script>

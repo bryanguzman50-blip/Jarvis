@@ -4,8 +4,8 @@ Status of all 11 items from the "Build Your Own Jarvis" toolkit. ✅ = built and
 
 | # | Item | Status |
 |---|---|---|
-| 1 | Jarvis dashboard | ✅ Built — live artifact (link in README) + `dashboard/` in this repo |
-| 2 | Talk to it + British voice | ✅/🔑 Voice mode works today; ElevenLabs voice needs an API key |
+| 1 | Jarvis dashboard | ✅ Built — **live console** (pulls Gmail/Calendar/ClickUp itself, zero credits) |
+| 2 | Talk to it + British voice | ✅ Voice-in works in the Claude app; British voice-out works on the dashboard (built-in, no key). ElevenLabs premium voice: key received, needs 2-min desktop install below |
 | 3 | Use your browser | 🔑 Install the Claude for Chrome extension |
 | 4 | Track revenue (RevenueCat) | 🔑 Only relevant if you ship an app with subscriptions — skip for now |
 | 5 | Auto-post content (Buffer) | 🔑 Needs a Buffer account + token |
@@ -20,17 +20,15 @@ Also already connected beyond the toolkit: **Google Calendar, ClickUp, Notion, G
 
 ---
 
-## 2. British voice (ElevenLabs)
+## 2. British voice
 
-Talking **to** Jarvis already works: tap the voice icon in the Claude mobile/desktop app, or `/voice` where available. For Jarvis to talk **back** in a proper British voice:
+Three layers, cheapest first:
 
-1. Create an account at [elevenlabs.io](https://elevenlabs.io) (free tier is fine to start) → Profile → **API key**, copy it.
-2. Add the official ElevenLabs MCP server to Claude Code — in a terminal:
-   ```bash
-   claude mcp add elevenlabs -e ELEVENLABS_API_KEY=YOUR_KEY -- uvx elevenlabs-mcp
-   ```
-3. Pick a British voice in the ElevenLabs voice library (**Daniel** and **George** are the classic Jarvis-adjacent picks) and tell Jarvis: *"use the Daniel voice when you speak"*.
-4. Then: "Jarvis, read me my morning brief" → he generates the audio.
+- **Voice in (works now):** tap the voice icon in the Claude mobile/desktop app while in the Jarvis repo.
+- **Voice out, no key (works now):** the dashboard's **▶ SPEAK BRIEF** button uses your device's built-in British voice (on iPhone/Mac that's literally "Daniel (UK)"). Free, offline, zero setup.
+- **Voice out, ElevenLabs quality:** Bryan's API key exists (kept out of this repo on purpose — **never commit it**). Two ways to wire it:
+  1. **Desktop app (recommended):** in a terminal, `claude mcp add elevenlabs -e ELEVENLABS_API_KEY=<the key> -- uvx elevenlabs-mcp`, then tell Jarvis *"speak with the Daniel voice"*.
+  2. **Cloud sessions (like this one):** at claude.ai → Code → this environment's settings, add env var `ELEVENLABS_API_KEY` and allow the domain `api.elevenlabs.io` in the network policy — the current policy blocks it, which is why Jarvis can't call ElevenLabs from the cloud yet.
 
 ## 3. Browser (Claude for Chrome)
 

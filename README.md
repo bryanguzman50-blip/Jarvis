@@ -4,9 +4,13 @@ Bryan's personal AI — Claude Code wearing a British butler's tailcoat, wired i
 
 > "Very good, sir. Shall I pull up the pipeline?"
 
-## Talk to him
+## Two ways to use him
 
-Open Claude (mobile app, desktop, or claude.ai/code) on this **Jarvis** repo and just talk — tap the voice icon on mobile for actual conversation. The persona, standing orders, and guardrails load automatically from `CLAUDE.md`.
+**1. The dashboard — free, any browser, no Claude app.**
+Open https://claude.ai/code/artifact/7646b433-4bfc-4526-9cc3-cb13f0b99669 (bookmark it; it's in your Artifacts list at claude.ai). It pulls your pipeline, inbox, and calendar *itself* every time you open it, and **▶ SPEAK BRIEF** reads the rundown aloud in a British voice. No AI model runs when you view it, so it costs **zero usage/credits**. Check it as often as you like.
+
+**2. Conversation — when you need Jarvis to actually do something.**
+Open Claude (mobile app, desktop, or claude.ai/code) on this **Jarvis** repo and just talk — tap the voice icon on mobile for hands-free. The persona, standing orders, and guardrails load automatically from `CLAUDE.md`. This is the mode that *thinks*, so it draws on your Claude subscription's usage — a quick brief or a drafted email is small; hours of open-ended chat is what adds up. Habit that keeps costs low: glance at the dashboard for status, open a conversation only when there's a task.
 
 Things to say:
 
