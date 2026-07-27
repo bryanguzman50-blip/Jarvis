@@ -132,6 +132,7 @@
         placeholder='Try: "draft an email", "add event", "move test run to friday 2pm", "note on a lead"…' aria-label="Command input">
       <button class="btn" id="mic" type="button" title="Speak a command">🎙 TALK</button>
       <button class="btn" id="send" type="button">SEND</button>
+      <button class="btn" id="mute" type="button" title="Mute or unmute spoken replies">🔊</button>
     </div>
     <div class="chips" id="chips">
       <button class="chip" data-c="brief">BRIEF</button>
@@ -195,6 +196,7 @@
   <footer>
     <b>Live console:</b> commands run directly against your Gmail, Google Calendar &amp; ClickUp —
     no Claude session, no usage spent. Email is <b>draft-only</b>: nothing sends without you.
+    Replies are spoken aloud — tap <b>🔊</b> to mute.
     Open-ended questions (news, research, writing) need Jarvis's full brain — the Jarvis repo in
     Claude Code. Source lives in <b>dashboard/</b>.
   </footer>
@@ -255,14 +257,26 @@
 
   /* ================= CONSOLE ================= */
   var log = $("log"), cmdIn = $("cmd");
-  var lastInputWasVoice = false;
+  /* Jarvis speaks every reply by default; the mute toggle persists across visits. */
+  var voiceOn = true;
+  try { if (localStorage.getItem("jarvis.mute") === "1") voiceOn = false; } catch(e){}
   function say(text, opts){
     opts = opts || {};
     var div = document.createElement("div");
     div.className = "msg jarvis" + (opts.err ? " err" : "");
     div.innerHTML = '<span class="tag">JARVIS</span>' + esc(text) + (opts.pre ? "<pre>"+esc(opts.pre)+"</pre>" : "");
     log.appendChild(div); log.scrollTop = log.scrollHeight;
-    if (lastInputWasVoice && "speechSynthesis" in window && !opts.silent) speak(text);
+    if (voiceOn && "speechSynthesis" in window && !opts.silent) {
+      var spoken = text;
+      // Read the detail block too — it's the substance of lists and previews.
+      if (opts.pre && opts.speakPre !== false) {
+        spoken += ". " + opts.pre
+          .replace(/^[•\-─–]+\s*/gm, "")   // bullets and rules
+          .replace(/^\s*\d+\.\s*/gm, function(m){ return m.trim() + " "; })
+          .split("\n").filter(function(l){ return l.trim(); }).join(". ");
+      }
+      speak(spoken);
+    }
   }
   function echo(text){
     var div = document.createElement("div");
@@ -284,13 +298,37 @@
   function speak(text){
     try {
       window.speechSynthesis.cancel();
-      var u = new SpeechSynthesisUtterance(text);
+      var u = new SpeechSynthesisUtterance(
+        String(text)
+          .replace(/\(yes\/no\)/gi, "yes or no")
+          .replace(/[—–]/g, ",")
+          .replace(/\s*\.\s*\./g, ".")
+      );
       var v = pickVoice(); if (v) u.voice = v;
       u.rate = 0.97; u.pitch = 0.9;
       window.speechSynthesis.speak(u);
     } catch(e){}
   }
   if ("speechSynthesis" in window) window.speechSynthesis.getVoices();
+
+  var muteBtn = $("mute");
+  function paintMute(){
+    muteBtn.textContent = voiceOn ? "🔊" : "🔇";
+    muteBtn.title = voiceOn ? "Spoken replies on — tap to mute" : "Muted — tap to hear replies";
+    muteBtn.setAttribute("aria-label", muteBtn.title);
+    muteBtn.dataset.live = voiceOn ? "" : "1";
+  }
+  if (!("speechSynthesis" in window)) { muteBtn.disabled = true; muteBtn.textContent = "🔇"; voiceOn = false; }
+  else {
+    paintMute();
+    muteBtn.addEventListener("click", function(){
+      voiceOn = !voiceOn;
+      if (!voiceOn) { try { window.speechSynthesis.cancel(); } catch(e){} }
+      try { localStorage.setItem("jarvis.mute", voiceOn ? "0" : "1"); } catch(e){}
+      paintMute();
+      if (voiceOn) speak("Voice restored, sir.");
+    });
+  }
 
   /* voice in */
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -305,7 +343,6 @@
       mic.dataset.live = "1"; mic.textContent = "■ STOP";
       rec.onresult = function(ev){
         var t = ev.results[0][0].transcript;
-        lastInputWasVoice = true;
         echo(t); handle(t);
       };
       rec.onerror = function(ev){
@@ -323,7 +360,6 @@
     var t = cmdIn.value.trim();
     if (!t) return;
     cmdIn.value = "";
-    lastInputWasVoice = false;
     echo(t); handle(t);
   }
   $("send").addEventListener("click", submit);
@@ -332,7 +368,7 @@
     var c = e.target && e.target.getAttribute("data-c");
     if (!c) return;
     if (/\s$/.test(c)) { cmdIn.value = c; cmdIn.focus(); return; } // prefill, awaiting details
-    lastInputWasVoice = false; echo(c); handle(c);
+    echo(c); handle(c);
   });
 
   /* ---------- wizards (multi-turn state) ---------- */
@@ -673,14 +709,14 @@
     "new lead 123 Main St - Sarah — adds to Active Leads\n" +
     "mao 200k arv 35k repairs [10k fee] — max allowable offer\n" +
     "cancel — abandon whatever we're doing\n" +
+    "🔊 — mute or unmute my spoken replies\n" +
     "Every write asks before it acts. Anything bigger (news, research, rewriting) → ask me in the Jarvis repo on Claude.";
 
   function handle(text){
     if (flow) { handleFlowInput(text); return; }
     var t = text.toLowerCase().trim();
 
-    if (/^(help|\?|what can you do)/.test(t)) { say("At your service, sir. On this console I can do the following:", {pre:HELP}); return; }
-    if (/\b(speak|aloud|out loud|read (it|me|this))\b/.test(t)) lastInputWasVoice = true;
+    if (/^(help|\?|what can you do)/.test(t)) { say("At your service, sir. On this console I can do the following:", {pre:HELP, speakPre:false}); return; }
     if (/\b(mao|max allowable|deal math)\b|^offer\b/.test(t)) {
       if (!/\d/.test(t)) { say('Give me the numbers, sir — e.g. "mao 200k arv 35k repairs".'); return; }
       cmdMao(text); return;
@@ -735,7 +771,8 @@
     if (arv === null) { say('Give me the numbers, sir — e.g. "mao 200k arv 35k repairs".'); return; }
     var mao = arv*pct - rep - fee;
     say("Maximum allowable offer: " + money(mao) + ", sir.",
-      {pre: "ARV          " + money(arv) + "\n× " + Math.round(pct*100) + "%        " + money(arv*pct) +
+      {speakPre:false,
+       pre: "ARV          " + money(arv) + "\n× " + Math.round(pct*100) + "%        " + money(arv*pct) +
             "\n− repairs    " + money(rep) + "\n− fee        " + money(fee) +
             "\n─────────────────\nMAO          " + money(mao) +
             (mao <= 0 ? "\n\nNo room in this one, sir." : "")});
